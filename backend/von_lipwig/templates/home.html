@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Von Lipwig{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <label for="mail">Enter your email:</label><br>
+    <input type="email" id="mail" name="mail" required><br><br>
+    <label for="subject">Enter subject:</label><br>
+    <input type="text" id="subject" name="subject" required><br><br>
+    <label for="recipient">Enter recipient email:</label><br>
+    <input type="email" id="recipient" name="recipient" required><br><br>
+    <button id="add_more" type="button">Add More Recipients</button><br><br>
+    <label for="message">Enter your message:</label><br>
+    <input type="text" id="message" name="message" required><br><br>
+    <input type="submit" value="Submit">
+</form>
+{% endblock %}

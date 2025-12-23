@@ -15,8 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('von_lipwig/', include('von_lipwig.urls')), # take any request that starts with von_lipwig/ and send it to von_lipwig/urls.py
+    # von_lipwig/urls.py will take care of the rest of the routing and will get the portion of the URL after von_lipwig/
 ]
