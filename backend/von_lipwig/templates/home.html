@@ -3,7 +3,9 @@
 {% block title %}Home - Von Lipwig{% endblock %}
 
 {% block content %}
-<form method="post">
+<form id="msg_form" method="post">
+    <fieldset>
+        <legend>the Post Master will deliver the messages.......anytime now</legend>
     {% csrf_token %}
     <label for="mail">Enter your email:</label><br>
     <input type="email" id="mail" name="mail" required><br><br>
@@ -15,5 +17,6 @@
     <label for="message">Enter your message:</label><br>
     <input type="text" id="message" name="message" required><br><br>
     <input type="submit" value="Submit">
+    </fieldset>
 </form>
 {% endblock %}
