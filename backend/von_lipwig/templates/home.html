@@ -3,21 +3,19 @@
 {% block title %}Home - Von Lipwig{% endblock %}
 
 {% block content %}
-<form id="msg_form" method="post">
+<form id="msg_form" action="{% url 'send_msg'%}" method="post">
     <fieldset>
-        <legend>the Post Master will deliver the messages.......anytime now</legend>
+        <legend>Your mail will be delivered!</legend>
         {% csrf_token %}
         <div class="user_email">
             <label for="mail">Enter your email:</label><br>
-            <input type="email" id="mail" name="mail" required><br><br>
+            <input type="email" id="mail" name="mail" required><br>
         </div>
         <div class="recipients_mail">
-            <p style="color: black;">Add upto 10 recipients!</p>
+            <h4>Recipients:</h4>
         </div>
         <button id="add_more" type="button">Add More Recipients</button><br><br>
         <div class="content">
-            <label for="subject">Enter subject:</label><br>
-            <input type="text" id="subject" name="subject" required><br><br>
             <label for="message">Enter your message:</label><br>
             <input type="text" id="message" name="message" required><br><br>
         </div>
@@ -30,12 +28,14 @@
         var newRecipient = document.createElement('input');
         newRecipient.type = 'email';
         newRecipient.id = 'recipient' + (recipientsDiv.getElementsByTagName('input').length + 1);
+        newRecipient.name = 'recipients';
         newRecipient.required = true;
         newRecipient.placeholder = 'Enter the recipients email';
         recipientsDiv.appendChild(newRecipient);
         var delBttn = document.createElement('button');
         delBttn.type = 'button';
         delBttn.innerText = 'Remove';
+        delBttn.class = 'remove_button';
         delBttn.addEventListener('click', function() {
             recipientsDiv.removeChild(newRecipient);
             recipientsDiv.removeChild(delBttn);
