@@ -113,6 +113,8 @@ nav a:hover {
     align-self: flex-start;
 }
 
+
+
 @media (max-width: 600px) {
     .container {
         margin: 1rem;
