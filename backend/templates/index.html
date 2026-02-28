@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>Welcome to the Post Station</h1>
-    <form action="/access-post" method="GET" class="ledger-form">
+    <form action="/access-post" method="GET" class="ledger-form" onsubmit="return emailIsValid()">
             <div class="access-pair">
                 <label for="waybill">Waybill ID</label>
                 <input type="text" id="waybill" name="waybill" placeholder="afjkhweifo" required>
@@ -35,6 +35,9 @@
     <div>
         <label>Email:</label>
         <input type="email" name="email" placeholder="Lx5Q3@example.com" required>
+        <div class="emailerror">
+
+        </div>
     </div>
 
         <div>
@@ -96,6 +99,25 @@
         }
         accessDiv.removeChild(accessDiv.lastElementChild);
         accessDiv.removeChild(accessDiv.lastElementChild);
+    }
+
+    function emailIsValid() {
+        const email = document.querySelector('input[name="email"]').value;
+        const error = document.querySelector('.emailerror');
+        const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        if (email == null || email == "") {
+            error.innerHTML = 'Email is required';
+            error.style.color = 'red';
+            return false;
+        } else if (regex.test(email) == false) {
+            error.innerHTML = 'Invalid email address';
+            error.style.color = 'red';
+            return false;
+        }
+        else {
+            error.innerHTML = '';
+            return true;
+        }
     }
 </script>
 </html>
