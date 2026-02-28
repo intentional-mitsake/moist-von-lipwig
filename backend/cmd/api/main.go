@@ -33,5 +33,10 @@ func main() {
 		logger.Error("Server failed", "error", err)
 		os.Exit(1)
 	}
+	//great thing about this create is that it creates the tables only if they dont exist
+	err = database.CreateTables(db) //ignores this command if tables exist
+	if err != nil {
+		logger.Error("Failed to create tables", "error", err)
+	}
 	defer database.CloseDB(db)
 }
