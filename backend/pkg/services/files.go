@@ -1,10 +1,12 @@
 package services
 
 import (
+	"fmt"
 	"io"
 	lg "moist-von-lipwig/pkg/log"
 	"net/http"
 	"os"
+	"time"
 )
 
 var logger = lg.CreateLogger()
@@ -23,8 +25,10 @@ func HandleFiles(fieldName string, r *http.Request) ([]string, error) {
 			return nil, err
 		}
 		defer src.Close()
-		//create a path to write the file to
-		filePath := "./uploads/" + file.Filename //looks outside the parent dir and for a dir named 'uploads'
+		//timestamp for unique names
+		now := time.Now().UnixNano() // e.g., 1708263456000000000
+		newFileName := fmt.Sprintf("%d-%s", now, file.Filename)
+		filePath := "./uploads/" + newFileName //looks outside the parent dir and for a dir named 'uploads'
 		//fmt.Println(filePath)
 		dst, err := os.Create(filePath)
 		if err != nil {
