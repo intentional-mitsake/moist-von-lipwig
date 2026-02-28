@@ -3,20 +3,22 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"moist-von-lipwig/pkg/database"
 	"moist-von-lipwig/pkg/routes"
 	"net/http"
 	"os"
 )
 
 func main() {
-
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8848"
 	}
 	addr := fmt.Sprint(":", port)
-	router := routes.CreateRouter()
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+	db := database.OpenDB()
+	logger.Info("Connected to database", "db", db)
+	router := routes.CreateRouter(db)
 	//listenandserve only returns error, thus unless the server crashes or we shut it, this wont be
 	//displayed if its after the func
 	logger.Info("Server starting", "address", addr)
@@ -28,5 +30,4 @@ func main() {
 		logger.Error("Server failed", "error", err)
 		os.Exit(1)
 	}
-
 }
