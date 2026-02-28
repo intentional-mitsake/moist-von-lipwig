@@ -7,6 +7,9 @@ import (
 	"moist-von-lipwig/pkg/models"
 	"os"
 
+	"encoding/json"
+
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -42,7 +45,7 @@ func CloseDB(db *sql.DB) error {
 func CreateTables(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS posts (
-			post_id SERIAL PRIMARY KEY,
+			post_id TEXT PRIMARY KEY,
 			access_pairs JSONB,
 			email TEXT,
 			message TEXT,
@@ -61,10 +64,26 @@ func CreateTables(db *sql.DB) error {
 }
 
 func InsertPost(db *sql.DB, post *models.Post) error {
-	_, err := db.Exec(`
-	 INSERT INTO posts (access_pairs, email, message, attachments, images, created_at, delivery, is_delivered)
-	 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, post.AccessPairs, post.Email, post.Message, post.Attachments, post.Images, post.CreatedAt, post.Delivery, post.IsDelivered)
+	//we have in the db access pairs as a JSONB. Jonb sllows us to store arrays, mpas etc in a single column otherwise not posssible
+	//access pairs here tho is a slice and is not converted automatically to JSONB
+	//marshla returns json of the slice
+	jsonB, err := json.Marshal(post.AccessPairs)
+	if err != nil {
+		logger.Error("Failed to marshal access pairs", "error", err)
+		return err
+	}
+	_, err = db.Exec( //banger of an error-->err was declared above, so if u use := here it gives error
+		`INSERT INTO posts (access_pairs, email, message, attachments, images, created_at, delivery, is_delivered)
+	    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		jsonB,
+		post.Email,
+		post.Message,
+		pq.Array(post.Attachments),
+		pq.Array(post.Images),
+		post.CreatedAt,
+		post.Delivery,
+		post.IsDelivered,
+	)
 	if err != nil {
 		logger.Error("Failed to insert post", "error", err)
 		return err

@@ -2,7 +2,6 @@ package routes
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	lg "moist-von-lipwig/pkg/log"
 	"moist-von-lipwig/pkg/models"
@@ -98,12 +97,18 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		"Delivery: ", new_post.Delivery,
 		"Is Delivered: ", new_post.IsDelivered,
 	)
-	uploadsPath, err := services.HandleFiles("attachments", r)
+	attachmentsPath, err := services.HandleFiles("attachments", r)
 	if err != nil {
 		http.Error(w, "Failed to handle files", http.StatusBadRequest)
 		//logged it in the HandleFiles func already
 	}
-	fmt.Println(uploadsPath)
+	imguploadsPath, err := services.HandleFiles("images", r)
+	if err != nil {
+		http.Error(w, "Failed to handle files", http.StatusBadRequest)
+	}
+	new_post.Attachments = attachmentsPath
+	new_post.Images = imguploadsPath
+	//fmt.Println(uploadsPath)
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
