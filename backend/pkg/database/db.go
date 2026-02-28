@@ -43,6 +43,7 @@ func CloseDB(db *sql.DB) error {
 }
 
 func CreateTables(db *sql.DB) error {
+	//exec gives *sql.Result, error
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS posts (
 			post_id TEXT PRIMARY KEY,
@@ -60,6 +61,8 @@ func CreateTables(db *sql.DB) error {
 		logger.Error("Failed to create table", "error", err)
 		return err
 	}
+	//fmt.Println("this is happening")
+	//fmt.Println(res)
 	return nil
 }
 

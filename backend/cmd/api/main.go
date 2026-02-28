@@ -22,6 +22,12 @@ func main() {
 	}
 	logger.Info("Connected to database", "db", db)
 	router := routes.CreateRouter(db)
+	//great thing about this create is that it creates the tables only if they dont exist
+	err = database.CreateTables(db) //ignores this command if tables exist
+	if err != nil {
+		logger.Error("Failed to create tables", "error", err)
+	}
+	defer database.CloseDB(db)
 	//listenandserve only returns error, thus unless the server crashes or we shut it, this wont be
 	//displayed if its after the func
 	logger.Info("Server starting", "address", addr)
@@ -33,10 +39,5 @@ func main() {
 		logger.Error("Server failed", "error", err)
 		os.Exit(1)
 	}
-	//great thing about this create is that it creates the tables only if they dont exist
-	err = database.CreateTables(db) //ignores this command if tables exist
-	if err != nil {
-		logger.Error("Failed to create tables", "error", err)
-	}
-	defer database.CloseDB(db)
+	fmt.Println("i just remembered noting is supposed to be hre")
 }
