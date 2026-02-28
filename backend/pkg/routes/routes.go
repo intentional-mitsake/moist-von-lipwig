@@ -2,10 +2,11 @@ package routes
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	lg "moist-von-lipwig/pkg/log"
 	"moist-von-lipwig/pkg/models"
-	"moist-von-lipwig/pkg/scheduler"
+	"moist-von-lipwig/pkg/services"
 	"net/http"
 )
 
@@ -74,7 +75,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	//files := r.MultipartForm.File["files"] //map of all the files cux its an array
 	//imgs := r.MultipartForm.File["images"] //map of all the images cux its an array
 	logger.Info("Post request received")
-	now, time := scheduler.Schedule()
+	now, time := services.Schedule()
 	//logger.Info("Delivery Time: ", time)
 	new_post := models.Post{
 		AccessPairs: []models.AccessPair{},
@@ -97,7 +98,8 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		"Delivery: ", new_post.Delivery,
 		"Is Delivered: ", new_post.IsDelivered,
 	)
-
+	uploadsPath := services.HandleFiles("attachments", r)
+	fmt.Println(uploadsPath)
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
