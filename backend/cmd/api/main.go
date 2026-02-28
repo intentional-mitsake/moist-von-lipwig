@@ -16,7 +16,10 @@ func main() {
 		port = "8848"
 	}
 	addr := fmt.Sprint(":", port)
-	db := database.OpenDB()
+	db, err := database.OpenDB()
+	if err != nil {
+		logger.Error("Failed to open the DB connection", "error", err)
+	}
 	logger.Info("Connected to database", "db", db)
 	router := routes.CreateRouter(db)
 	//listenandserve only returns error, thus unless the server crashes or we shut it, this wont be
@@ -30,4 +33,5 @@ func main() {
 		logger.Error("Server failed", "error", err)
 		os.Exit(1)
 	}
+	defer database.CloseDB(db)
 }
