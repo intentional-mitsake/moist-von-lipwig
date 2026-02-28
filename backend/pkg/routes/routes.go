@@ -40,6 +40,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func dbHandler(w http.ResponseWriter, r *http.Request) {
+	//this shouldnt be done here-->only once at the start
 	DB := db.OpenDB()
 	logger.Info("Connected to database", "db", DB)
 }
@@ -59,6 +60,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	message := r.FormValue("message")
+	email := r.FormValue("email")
 	waybilIDs := r.Form["waybill-ids"] //map of all the access ids cux its an array
 	keys := r.Form["key"]              //map of all the keys cux its an array
 	//files := r.MultipartForm.File["files"] //map of all the files cux its an array
@@ -68,6 +70,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	//logger.Info("Delivery Time: ", time)
 	new_post := models.Post{
 		AccessPairs: []models.AccessPair{},
+		Email:       email,
 		Message:     message,
 		CreatedAt:   now,
 		Delivery:    time,
