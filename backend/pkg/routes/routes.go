@@ -1,8 +1,8 @@
 package routes
 
 import (
+	"database/sql"
 	"html/template"
-	db "moist-von-lipwig/pkg/database"
 	lg "moist-von-lipwig/pkg/log"
 	"moist-von-lipwig/pkg/models"
 	"moist-von-lipwig/pkg/scheduler"
@@ -11,8 +11,14 @@ import (
 
 var logger = lg.CreateLogger()
 
-func CreateRouter() http.Handler {
+// every route handler that needs to access the database will be a method of htis struct
+type DBConfig struct {
+	DBObj *sql.DB
+}
+
+func CreateRouter(db *sql.DB) http.Handler {
 	mux := http.NewServeMux()
+	dbCnfg := DBConfig{DBObj: db}
 	//create a fileserver so that static files can be served
 	//every time a fiel is requested, server looks for it in the templates folder
 	fs := http.FileServer(http.Dir("./templates"))
@@ -22,9 +28,9 @@ func CreateRouter() http.Handler {
 	//have to do all the fileserver thing cuz when the indexHandler is called
 	//it reads the index.html, when it sees style.css is needed it cant find it wihtout hte above setup
 	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/db", dbHandler)
-	mux.HandleFunc("/post-letter", postHandler)
-	mux.HandleFunc("/access-post", accessHandler)
+	mux.HandleFunc("/db", dbCnfg.dbHandler)
+	mux.HandleFunc("/post-letter", dbCnfg.postHandler)
+	mux.HandleFunc("/access-post", dbCnfg.postHandler)
 	return mux
 }
 
@@ -39,13 +45,15 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
-func dbHandler(w http.ResponseWriter, r *http.Request) {
-	//this shouldnt be done here-->only once at the start
-	DB := db.OpenDB()
-	logger.Info("Connected to database", "db", DB)
+func (d *DBConfig) dbHandler(w http.ResponseWriter, r *http.Request) {
+	if d.DBObj == nil {
+		http.Error(w, "Database not initialized", http.StatusInternalServerError)
+		return
+	}
+
 }
 
-func postHandler(w http.ResponseWriter, r *http.Request) {
+func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	//to allow only post requests
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -92,7 +100,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func accessHandler(w http.ResponseWriter, r *http.Request) {
+func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
