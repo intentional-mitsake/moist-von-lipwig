@@ -12,12 +12,8 @@ type Config struct {
 }
 
 func LoadDBConfig() *Config {
-	err := godotenv.Load(".env")
-	if err != nil {
-		panic(err)
-	}
+	godotenv.Load(".env")
 	source := os.Getenv("DBCONN")
-	println(source)
 	return &Config{
 		DBDriver: "postgres",
 		DBSource: source,
