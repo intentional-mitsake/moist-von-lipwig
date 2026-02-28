@@ -8,11 +8,20 @@
 </head>
 <body>
     <h1>Welcome to the Post Station</h1>
+    <form action="/access_post" method="POST" class="ledger-form">
+            <div class="access-pair">
+                <label for="waybill">Waybill ID</label>
+                <input type="text" id="waybill" name="waybill" placeholder="afjkhweifo" required>
+                <label for="key">Courier Key</label>
+                <input type="password" id="cipher" name="cipher" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-search">Locate Post</button>
+        </form>
     <form action="/post-letter" method="POST" enctype="multipart/form-data">
         <div>
             <label>Access Ids:</label><br>
         <div class="access-ids">
-            <input type="text" name="access_ids" placeholder="John Doe" required>
+            <input type="text" name="waybill-ids" placeholder="John Doe" required>
             <input type="password" name="key" placeholder="afjwh" required>
         </div>
         <div class="error">
@@ -59,7 +68,7 @@
         }
         const input = document.createElement('input');
         input.type = 'text';
-        input.name = 'access_ids';
+        input.name = 'waybill-ids';
         input.placeholder = 'John Doe';
         input.required = true;
 
