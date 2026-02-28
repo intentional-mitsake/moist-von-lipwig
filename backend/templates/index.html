@@ -10,23 +10,21 @@
     <h1>Welcome to the Post Station</h1>
     <form action="/post-letter" method="POST" enctype="multipart/form-data">
         <div>
-            <label>Your Email:</label><br>
-            <input type="email" name="sender_email" required>
+            <label>Access Ids:</label><br>
+        <div class="access-ids">
+            <input type="text" name="access_ids" placeholder="John Doe" required>
+            <input type="password" name="key" placeholder="afjwh" required>
         </div>
-
-        <div>
-            <label>Recipients (emails):</label><br>
-            <div class="recipients">
-                <input type="text" name="recipients" placeholder="email1@example.com, email2@example.com" required>
-            </div>
-            <div class="error">
-                <!--error message-->
-            </div>
-            <div class="recipient-controls">
-                <button type="button" onclick="addRecipientField()">+ Add</button>
-                <button type="button" onclick="removeRecipientField()" style="color: #e74c3c;">- Remove</button>
-            </div>
+        <div class="error">
+            <!--error message-->
         </div>
+        <div class="access-controls">
+            <button type="button" onclick="addAccessIds()">+ Add</button>
+            <button type="button" onclick="removeAccessIds()" style="color: #e74c3c;">- Remove</button>
+        </div>
+        </div>
+        
+        
 
         <div>
             <label>Message:</label><br>
@@ -48,35 +46,45 @@
     </form>
 </body>
 <script type="text/javascript">
-    function addRecipientField() {
-        const recipientsDiv = document.querySelector('.recipients');
+    function addAccessIds() {
+        const accessDiv = document.querySelector('.access-ids');
         const error = document.querySelector('.error');
         //clear if there war an error
         error.innerHTML = '';
-        if (recipientsDiv.childElementCount >= 8) {
+        if (accessDiv.children.length >= 16) {// 8 *2 = 16
             //alert('You can only add up to 8 recipients');
-            error.innerHTML = 'You can only add up to 8 recipients';
+            error.innerHTML = 'You can only add up to 8 access ids';
             error.style.color = 'red';
             return;
         }
         const input = document.createElement('input');
         input.type = 'text';
-        input.name = 'recipients';
-        input.placeholder = 'email1@example.com, email2@example.com';
-        recipientsDiv.appendChild(input);
+        input.name = 'access_ids';
+        input.placeholder = 'John Doe';
+        input.required = true;
+
+        const k = document.createElement('input');
+        k.type = 'password';
+        k.name = 'key';
+        k.placeholder = 'afjwh';
+        k.required = true;
+
+        accessDiv.appendChild(input);
+        accessDiv.appendChild(k);
     }
-    function removeRecipientField() {
-        const recipientsDiv = document.querySelector('.recipients');
-            const error = document.querySelector('.error');
-            error.innerHTML = '';//clear previous error
+    function removeAccessIds() {
+        const accessDiv = document.querySelector('.access-ids');
+        const error = document.querySelector('.error');
+        error.innerHTML = '';//clear previous error
         //dont remove if only one
-        if (recipientsDiv.childElementCount <= 1) {
+        if (accessDiv.children.length <= 2) {//pairs of id and key
             //alert('You must have at least one recipient');
-            error.innerHTML = 'You must have at least one recipient';
+            error.innerHTML = 'You must have at least one access id';
             error.style.color = 'red';
             return;
         }
-        recipientsDiv.removeChild(recipientsDiv.lastElementChild);
+        accessDiv.removeChild(accessDiv.lastElementChild);
+        accessDiv.removeChild(accessDiv.lastElementChild);
     }
 </script>
 </html>

@@ -4,6 +4,7 @@ import (
 	"html/template"
 	db "moist-von-lipwig/pkg/database"
 	lg "moist-von-lipwig/pkg/log"
+	"moist-von-lipwig/pkg/scheduler"
 	"net/http"
 )
 
@@ -55,11 +56,12 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to parse form", "error", e)
 		return
 	}
-	sender := r.FormValue("sender_email")
 	message := r.FormValue("message")
-	recipients := r.Form["recipients"]     //map of all the recipients cux its an array
+	accessIDs := r.Form["access-ids"]      //map of all the access ids cux its an array
+	keys := r.Form["key"]                  //map of all the keys cux its an array
 	files := r.MultipartForm.File["files"] //map of all the files cux its an array
 	imgs := r.MultipartForm.File["images"] //map of all the images cux its an array
-
-	logger.Info("Post request received", "sender", sender, "recipients", recipients, "message", message, "files", files, "imgs", imgs)
+	logger.Info("Post request received", "Access IDs", accessIDs, "Keys", keys, "message", message, "files", files, "imgs", imgs)
+	time := scheduler.Schedule()
+	logger.Info("Delivery Time: ", time)
 }
