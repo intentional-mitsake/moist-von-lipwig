@@ -9,7 +9,7 @@ import (
 
 var logger = lg.CreateLogger()
 
-func HandleFiles(fieldName string, r *http.Request) []string {
+func HandleFiles(fieldName string, r *http.Request) ([]string, error) {
 	uploadsPath := []string{}
 	//get the file/img from the request
 	// user can upload multiple files so we are using a slice
@@ -20,7 +20,7 @@ func HandleFiles(fieldName string, r *http.Request) []string {
 		src, err := file.Open() //with f we can do: f.Filename, f.Size, f.Header(for img), f.Filename
 		if err != nil {
 			logger.Error("Failed to create file", "error", err)
-			return nil
+			return nil, err
 		}
 		defer src.Close()
 		//create a path to write the file to
@@ -29,15 +29,16 @@ func HandleFiles(fieldName string, r *http.Request) []string {
 		dst, err := os.Create(filePath)
 		if err != nil {
 			logger.Error("Failed to upload the fiel", "error", err)
-			return nil
+			return nil, err
 		}
 		defer dst.Close()
 		//copy the file to the path
 		if _, err := io.Copy(dst, src); err != nil {
 			logger.Error("Failed to copy file", "error", err)
-			return nil
+			return nil, err
 		}
+		//holds path for where all the files have been uploaded
 		uploadsPath = append(uploadsPath, filePath)
 	}
-	return uploadsPath
+	return uploadsPath, nil
 }

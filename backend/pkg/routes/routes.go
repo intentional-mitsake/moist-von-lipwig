@@ -98,7 +98,11 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		"Delivery: ", new_post.Delivery,
 		"Is Delivered: ", new_post.IsDelivered,
 	)
-	uploadsPath := services.HandleFiles("attachments", r)
+	uploadsPath, err := services.HandleFiles("attachments", r)
+	if err != nil {
+		http.Error(w, "Failed to handle files", http.StatusBadRequest)
+		//logged it in the HandleFiles func already
+	}
 	fmt.Println(uploadsPath)
 }
 
