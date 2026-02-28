@@ -8,3 +8,7 @@ package cron
 // add it to the DB AND to the cache
 //the cache will be used to check if any posts need to be delivered on the day
 //send email if time has come and change is_delivered to true
+
+func CheckDeliveryDates() {}
+
+func SendEmails() {}
