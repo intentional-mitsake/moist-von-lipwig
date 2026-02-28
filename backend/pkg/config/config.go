@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
 	DBDriver string
@@ -8,7 +12,12 @@ type Config struct {
 }
 
 func LoadDBConfig() *Config {
+	err := godotenv.Load(".env")
+	if err != nil {
+		panic(err)
+	}
 	source := os.Getenv("DBCONN")
+	println(source)
 	return &Config{
 		DBDriver: "postgres",
 		DBSource: source,

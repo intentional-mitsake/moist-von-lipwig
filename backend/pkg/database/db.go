@@ -22,7 +22,7 @@ func OpenDB() *sql.DB {
 	//need to ping to test if the connection is alive
 	p := db.Ping()
 	if p != nil {
-		logger.Error("Failed to ping database", "error", err)
+		logger.Error("Failed to ping database", "error", p)
 		os.Exit(1)
 	}
 	return db
