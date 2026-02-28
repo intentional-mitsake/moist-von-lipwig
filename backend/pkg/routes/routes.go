@@ -7,6 +7,8 @@ import (
 	"moist-von-lipwig/pkg/models"
 	"moist-von-lipwig/pkg/services"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 var logger = lg.CreateLogger()
@@ -74,7 +76,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	//files := r.MultipartForm.File["files"] //map of all the files cux its an array
 	//imgs := r.MultipartForm.File["images"] //map of all the images cux its an array
 	logger.Info("Post request received")
-	now, time, postID := services.Schedule()
+	now, time := services.Schedule()
 	//logger.Info("Delivery Time: ", time)
 	attachmentsPath, err := services.HandleFiles("attachments", r)
 	if err != nil {
@@ -85,12 +87,17 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to handle files", http.StatusBadRequest)
 	}
+	hm, err := services.HashIns(message, d.DBObj)
+	if err != nil {
+		http.Error(w, "Failed to hash message", http.StatusBadRequest)
+	}
+
 	//fmt.Println(uploadsPath)
 	new_post := models.Post{
-		PostID:      postID,
+		PostID:      uuid.New().String(),
 		AccessPairs: []models.AccessPair{},
 		Email:       email,
-		Message:     message,
+		Message:     hm,
 		Attachments: attachmentsPath,
 		Images:      imguploadsPath,
 		CreatedAt:   now,
@@ -98,9 +105,13 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		IsDelivered: false,
 	}
 	for i, _ := range waybilIDs {
+		hk, err := services.HashIns(keys[i], d.DBObj)
+		if err != nil {
+			http.Error(w, "Failed to hash key", http.StatusBadRequest)
+		}
 		new_post.AccessPairs = append(new_post.AccessPairs, models.AccessPair{
 			WaybillID: waybilIDs[i],
-			Key:       keys[i],
+			Key:       hk,
 		})
 	}
 	logger.Info("Post: ",
