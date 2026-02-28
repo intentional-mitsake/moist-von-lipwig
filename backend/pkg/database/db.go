@@ -76,8 +76,9 @@ func InsertPost(db *sql.DB, post *models.Post) error {
 		return err
 	}
 	_, err = db.Exec( //banger of an error-->err was declared above, so if u use := here it gives error
-		`INSERT INTO posts (access_pairs, email, message, attachments, images, created_at, delivery, is_delivered)
-	    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		`INSERT INTO posts (post_id, access_pairs, email, message, attachments, images, created_at, delivery, is_delivered)
+	    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
+		post.PostID,
 		jsonB,
 		post.Email,
 		post.Message,

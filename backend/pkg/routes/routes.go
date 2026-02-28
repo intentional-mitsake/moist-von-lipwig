@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"html/template"
+	"moist-von-lipwig/pkg/database"
 	lg "moist-von-lipwig/pkg/log"
 	"moist-von-lipwig/pkg/models"
 	"moist-von-lipwig/pkg/services"
@@ -122,6 +123,12 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		"Delivery: ", new_post.Delivery,
 		"Is Delivered: ", new_post.IsDelivered,
 	)
+	err = database.InsertPost(d.DBObj, &new_post)
+	if err != nil {
+		http.Error(w, "Failed to insert post", http.StatusBadRequest)
+		return
+	}
+	logger.Info("Post inserted successfully")
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
