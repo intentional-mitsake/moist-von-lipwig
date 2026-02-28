@@ -3,9 +3,11 @@ package services
 import (
 	"math/rand/v2"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-func Schedule() (time.Time, time.Time) { //now, DT time.Time {
+func Schedule() (time.Time, time.Time, string) { //now, DT time.Time {
 	now := time.Now() //get current time
 	//fmt.Println(now)
 	//10 * 365 = 3650 days--> 24 * 3650 = 87600 hours
@@ -14,5 +16,8 @@ func Schedule() (time.Time, time.Time) { //now, DT time.Time {
 	//fmt.Println(time.Duration(randTime) * time.Hour)
 	deliveryTime := now.Add(time.Duration(randTime) * time.Hour) //add random time to current tim
 	//fmt.Println(deliveryTime)
-	return now, deliveryTime
+	//generate a postID here as well
+	id := uuid.New()
+	postID := id.String()
+	return now, deliveryTime, postID
 }

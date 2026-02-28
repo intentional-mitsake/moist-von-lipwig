@@ -74,12 +74,25 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	//files := r.MultipartForm.File["files"] //map of all the files cux its an array
 	//imgs := r.MultipartForm.File["images"] //map of all the images cux its an array
 	logger.Info("Post request received")
-	now, time := services.Schedule()
+	now, time, postID := services.Schedule()
 	//logger.Info("Delivery Time: ", time)
+	attachmentsPath, err := services.HandleFiles("attachments", r)
+	if err != nil {
+		http.Error(w, "Failed to handle files", http.StatusBadRequest)
+		//logged it in the HandleFiles func already
+	}
+	imguploadsPath, err := services.HandleFiles("images", r)
+	if err != nil {
+		http.Error(w, "Failed to handle files", http.StatusBadRequest)
+	}
+	//fmt.Println(uploadsPath)
 	new_post := models.Post{
+		PostID:      postID,
 		AccessPairs: []models.AccessPair{},
 		Email:       email,
 		Message:     message,
+		Attachments: attachmentsPath,
+		Images:      imguploadsPath,
 		CreatedAt:   now,
 		Delivery:    time,
 		IsDelivered: false,
@@ -91,24 +104,13 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	logger.Info("Post: ",
+		"Post ID: ", new_post.PostID,
 		"Access Pairs: ", len(new_post.AccessPairs),
 		"Message: ", new_post.Message,
 		"Created At: ", new_post.CreatedAt,
 		"Delivery: ", new_post.Delivery,
 		"Is Delivered: ", new_post.IsDelivered,
 	)
-	attachmentsPath, err := services.HandleFiles("attachments", r)
-	if err != nil {
-		http.Error(w, "Failed to handle files", http.StatusBadRequest)
-		//logged it in the HandleFiles func already
-	}
-	imguploadsPath, err := services.HandleFiles("images", r)
-	if err != nil {
-		http.Error(w, "Failed to handle files", http.StatusBadRequest)
-	}
-	new_post.Attachments = attachmentsPath
-	new_post.Images = imguploadsPath
-	//fmt.Println(uploadsPath)
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
