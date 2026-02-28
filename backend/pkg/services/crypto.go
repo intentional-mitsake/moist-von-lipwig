@@ -1,4 +1,4 @@
-package crypto
+package services
 
 //encrypt the messages, attachments, access pairs before storing in the db
 

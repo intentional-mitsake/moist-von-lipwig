@@ -1,4 +1,4 @@
-package scheduler
+package services
 
 import (
 	"math/rand/v2"

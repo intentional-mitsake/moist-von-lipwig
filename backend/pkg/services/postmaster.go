@@ -1,4 +1,4 @@
-package cron
+package services
 
 //check for delivery dates from the DB every 3 days
 //this will vastly reduce the load on the server
