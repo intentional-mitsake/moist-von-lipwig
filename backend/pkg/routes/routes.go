@@ -24,6 +24,7 @@ func CreateRouter() http.Handler {
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/db", dbHandler)
 	mux.HandleFunc("/post-letter", postHandler)
+	mux.HandleFunc("/access-post", accessHandler)
 	return mux
 }
 
@@ -86,4 +87,21 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		"Is Delivered: ", new_post.IsDelivered,
 	)
 
+}
+
+func accessHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		logger.Error("Failed to parse form", "error", err)
+		return
+	}
+	waybill := r.FormValue("waybill")
+	key := r.FormValue("key")
+	logger.Info("Waybill request received", "waybill", waybill, "key", key)
 }
