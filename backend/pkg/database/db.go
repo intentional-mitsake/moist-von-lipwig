@@ -135,11 +135,11 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 }
 
 func ChangeDeliveryStatus(db *sql.DB) {
-	_, err := db.Exec(
+	_, err := db.Exec( //no need to change if already delivered
 		`
 		UPDATE posts
 		SET is_delivered = true
-		WHERE delivery <= $1;
+		WHERE delivery <= $1 AND is_delivered = false;
 		`,
 		time.Now(),
 	)
