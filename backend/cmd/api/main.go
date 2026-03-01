@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"moist-von-lipwig/pkg/database"
 	"moist-von-lipwig/pkg/routes"
+	"moist-von-lipwig/pkg/services"
 	"net/http"
 	"os"
 )
@@ -28,6 +29,11 @@ func main() {
 		logger.Error("Failed to create tables", "error", err)
 	}
 	defer database.CloseDB(db)
+
+	//CRON JOBS
+	c := services.CronJobs(db)
+	defer c.Stop() //so that the cron jobs dont run forever and stop if the server crashes
+
 	//listenandserve only returns error, thus unless the server crashes or we shut it, this wont be
 	//displayed if its after the func
 	logger.Info("Server starting", "address", addr)

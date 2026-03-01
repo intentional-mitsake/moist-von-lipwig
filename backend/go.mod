@@ -9,5 +9,6 @@ require (
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/robfig/cron v1.2.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 )

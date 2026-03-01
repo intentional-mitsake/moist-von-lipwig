@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -9,6 +10,12 @@ import (
 type Config struct {
 	DBDriver string
 	DBSource string
+}
+
+type Delivery struct {
+	PostID      string
+	Delivery    time.Time
+	IsDelivered bool
 }
 
 func LoadDBConfig() *Config {

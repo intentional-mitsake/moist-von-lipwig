@@ -1,8 +1,14 @@
 package services
 
 import (
+	"database/sql"
+	"fmt"
+	"moist-von-lipwig/pkg/config"
+	"moist-von-lipwig/pkg/database"
 	"net"
 	"strings"
+
+	"github.com/robfig/cron"
 )
 
 //check for delivery dates from the DB every 3 days
@@ -14,9 +20,27 @@ import (
 //the cache will be used to check if any posts need to be delivered on the day
 //send email if time has come and change is_delivered to true
 
-func CheckDeliveryDates() {}
+func CronJobs(db *sql.DB) *cron.Cron {
+	c := cron.New()
+	err := c.AddFunc("@every 30s", func() {
+		schedule := CheckDeliveryDates(db)
+		fmt.Println(schedule)
+		//fmt.Println(time.Duration(time.Now()))
+		//fmt.Println(time.Now().Add(3 * 24 * time.Hour))
+	})
+	if err != nil {
+		logger.Error("Error running cron job", "error", err)
+	}
+	c.Start()
+	logger.Info("Cron starting", "cron", c)
+	return c
+}
 
-func SendEmails() {}
+func CheckDeliveryDates(db *sql.DB) []config.Delivery {
+	schedule, _ := database.GetDeliveryDates(db)
+	//already logged the error and no need to send that to the user
+	return schedule
+}
 
 func DomainExists(email string) (bool, error) {
 	_, domain := splitEmail(email)

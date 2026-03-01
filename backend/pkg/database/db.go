@@ -6,6 +6,7 @@ import (
 	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/models"
 	"os"
+	"time"
 
 	"encoding/json"
 
@@ -93,4 +94,41 @@ func InsertPost(db *sql.DB, post *models.Post) error {
 		return err
 	}
 	return nil
+}
+
+func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
+	rows, err := db.Query(
+		`
+		SELECT post_id, delivery, is_delivered FROM posts 
+		WHERE delivery BETWEEN $1 AND $2;
+		`,
+		time.Now(),
+		time.Now().Add(3*24*time.Hour),
+	)
+	if err != nil {
+		logger.Error("Failed to get delivery dates", "error", err)
+		return nil, err
+	}
+	var delivery []config.Delivery
+	defer rows.Close() //closing the rows after we are done
+	for rows.Next() {  //preps next row to rea
+		var id string
+		var date time.Time
+		var isDelivered bool
+		err := rows.Scan(&id, &date, &isDelivered)
+		if err != nil {
+			logger.Error("Error while scanning the rows", "error", err)
+			return nil, err
+		}
+		delivery = append(delivery, config.Delivery{
+			PostID:      id,
+			Delivery:    date,
+			IsDelivered: isDelivered,
+		})
+		if err = rows.Err(); err != nil {
+			logger.Error("Error while scanning the rows", "error", err)
+			return nil, err
+		}
+	}
+	return delivery, nil
 }
