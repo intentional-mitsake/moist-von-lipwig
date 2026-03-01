@@ -133,3 +133,17 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 	}
 	return delivery, nil
 }
+
+func ChangeDeliveryStatus(db *sql.DB) {
+	_, err := db.Exec(
+		`
+		UPDATE posts
+		SET is_delivered = true
+		WHERE delivery <= $1;
+		`,
+		time.Now(),
+	)
+	if err != nil {
+		logger.Error("Failed to change delivery status", "error", err)
+	}
+}
