@@ -23,7 +23,7 @@ import (
 func CronJobs(db *sql.DB) *cron.Cron {
 	c := cron.New()
 	var schedule []config.Delivery
-	err := c.AddFunc("@every 10s", func() { //30s only for debugging-->should be 3 days in prod
+	err := c.AddFunc("@every 20s", func() { //30s only for debugging-->should be 3 days in prod
 		schedule = CheckDeliveryDates(db)
 		//fmt.Println(schedule)
 		//fmt.Println(time.Duration(time.Now()))
@@ -59,11 +59,12 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 	//eg: "10 30 12 11 13 *" -> 10th sec, 30th min, 12th hr, 11th day, 13th month, *(skips the day of the week)
 	//i wiil convert the delivery date to cron format here to prepare a specific schedule
 	scheduledDates := make(map[string][]string) //[cronFormat]postID
+	emailMap := make(map[string]string)         //[postID]email
 	for _, post := range schedule {
 		p := post
 		//mt.Println(day)
 		//fmt.Println(month)
-		scheduledDate := fmt.Sprintf("0 0 0 %d %d", //sec min hr dom mon dow--> 0 0 0 day month *
+		scheduledDate := fmt.Sprintf("0 46 9 %d %d *", //sec min hr dom mon dow--> 0 0 0 day month *
 			//precision down to the seconds doesnt matter
 			p.Delivery.Day(),
 			p.Delivery.Month(),
@@ -74,9 +75,27 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 		} else { //if the date is in the map, append this postID to existing list of postIDs
 			scheduledDates[scheduledDate] = append(scheduledDates[scheduledDate], p.PostID)
 		}
+		emailMap[p.PostID] = p.Email //each post has an email and is unique
 	}
 	fmt.Println(scheduledDates)
-}
+	//most efficient will be to have one cron job for all the same dates
+	for cronShedule, postIDs := range scheduledDates {
+		//have to declare new variables inside the loop cuz
+		//addFunc is not run here; its only scheduled here, by the time it runs, the loop will be over
+		//and cuz thel oop is over it uses the last postIDs only
+		currentSchedule := cronShedule
+		currentPostIDs := postIDs
+		c.AddFunc(currentSchedule, func() {
+			for _, postID := range currentPostIDs {
+				email := emailMap[postID] //get the email of this postID
+				go SendEmail(email)       //mutliple posts are sent at same schedule so run parallel to reduce load
+			}
+			//doesnt need to be called for each post as they are all scheduled for the same date
+			database.ChangeDeliveryStatus(db) //this way even delivery dates we missed previously will be marked as delivered
+		})
+	}
 
-func AccessChange() {}
-func SendEmail()    {}
+}
+func SendEmail(email string) {
+	fmt.Println(email)
+}

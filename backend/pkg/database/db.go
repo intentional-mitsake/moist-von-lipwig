@@ -139,9 +139,11 @@ func ChangeDeliveryStatus(db *sql.DB) {
 		`
 		UPDATE posts
 		SET is_delivered = true
-		WHERE delivery <= $1 AND is_delivered = false;
+		WHERE delivery <= $1 + INTERVAL '24 hours'
+		AND is_delivered = false;
 		`,
-		time.Now(),
+		time.Now(), //used interval to add 24 hours to get deliveries <= now AND 24hours from now as well
+		//otherwise we miss deliveries to be made only hours later than the time CRONjob checked db
 	)
 	if err != nil {
 		logger.Error("Failed to change delivery status", "error", err)
