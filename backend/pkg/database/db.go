@@ -98,12 +98,14 @@ func InsertPost(db *sql.DB, post *models.Post) error {
 
 func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 	rows, err := db.Query( //for efficiency only get the ones that are not delivered
+		//changed to <=now+24hours cuz that way we will get all false state posts with delivery <= now+24
+		//so anything missed will be covered as well
 		`
 		SELECT post_id, delivery, is_delivered, email FROM posts 
-		WHERE delivery BETWEEN $1 AND $2 AND is_delivered = false;
+		WHERE delivery <= $1 + INTERVAL '24 hours'
+		AND is_delivered = false;
 		`,
 		time.Now(),
-		time.Now().Add(3*24*time.Hour),
 	)
 	if err != nil {
 		logger.Error("Failed to get delivery dates", "error", err)
@@ -134,15 +136,15 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 	return delivery, nil
 }
 
-func ChangeDeliveryStatus(db *sql.DB) {
+func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	_, err := db.Exec( //no need to change if already delivered
 		`
 		UPDATE posts
 		SET is_delivered = true
-		WHERE delivery <= $1 + INTERVAL '24 hours'
+		WHERE post_id = ANY($1)
 		AND is_delivered = false;
 		`,
-		time.Now(), //used interval to add 24 hours to get deliveries <= now AND 24hours from now as well
+		pq.Array(postIDs), //used interval to add 24 hours to get deliveries <= now AND 24hours from now as well
 		//otherwise we miss deliveries to be made only hours later than the time CRONjob checked db
 	)
 	if err != nil {
