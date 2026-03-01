@@ -147,6 +147,7 @@ type data struct {
 	IsDelivered bool
 	Response    string
 	Delivery    time.Time
+	Post        models.Post
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +174,7 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		WaybillID: waybill,
 		Key:       key,
 	}
-	isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
+	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
 	if err != nil {
 		//http.Error(w, "Failed to check delivery status", http.StatusBadRequest)
 		logger.Error("Failed to check delivery status", "error", err)
@@ -200,6 +201,10 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		dd.IsDelivered = isDelivered
 		dd.Response = fmt.Sprintf("Delivery Status: %t", dd.IsDelivered)
 		dd.Delivery = dt
+		if dd.IsDelivered {
+			//only show the post if its delivered
+			dd.Post = post
+		}
 		logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

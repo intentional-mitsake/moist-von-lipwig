@@ -153,31 +153,50 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	}
 }
 
-func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (status bool, res int, delivery time.Time, e error) {
+func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.Post, status bool, res int, delivery time.Time, e error) {
 	rows, err := db.Query(`
-    SELECT delivery, is_delivered, pair->>'Key'
+    SELECT post_id, delivery, is_delivered, pair->>'Key'
     FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
     WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
 	if err != nil {
 		logger.Error("Database query failed", "error", err)
-		return false, 2, time.Time{}, err
+		return models.Post{}, false, 2, time.Time{}, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var tempDelivery time.Time
 		var tempIsDelivered bool
 		var tempHashedPassword string
+		var postID string
 
-		if err := rows.Scan(&tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
+		if err := rows.Scan(&postID, &tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
 			continue
 		}
 		err = bcrypt.CompareHashAndPassword([]byte(tempHashedPassword), []byte(accesspair.Key))
 		if err == nil {
 			// match found
-			return tempIsDelivered, 4, tempDelivery, nil
+			var post models.Post
+			err = db.QueryRow(`
+			SELECT post_id, email, message, attachments, images, created_at, delivery, is_delivered
+			FROM posts
+			WHERE post_id = $1`, postID).Scan(
+				&post.PostID,
+				&post.Email,
+				&post.Message,
+				pq.Array(&post.Attachments),
+				pq.Array(&post.Images),
+				&post.CreatedAt,
+				&post.Delivery,
+				&post.IsDelivered,
+			)
+			if err != nil {
+				logger.Error("Database query failed", "error", err)
+				return models.Post{}, false, 2, time.Time{}, err
+			}
+			return post, tempIsDelivered, 4, tempDelivery, nil
 		}
 	}
 
 	//no match
-	return false, 3, time.Time{}, fmt.Errorf("invalid waybill or key")
+	return models.Post{}, false, 3, time.Time{}, fmt.Errorf("invalid waybill or key")
 }

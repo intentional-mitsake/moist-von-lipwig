@@ -9,102 +9,138 @@
 
 <body>
 
-<div class="card">
-    <div class="content">
+    <div class="card">
+        <div class="content">
 
-        {{ if .Show }}
+            {{ if .Show }}
 
-            <img src="/static/assets/delivery.jpg" class="header-img" alt="Delivery Header">
-            <div class="status-badge granted">ACCESS GRANTED</div>
-            <p class="response-text">{{ .Response }}</p>
+                <img src="/static/assets/delivery.jpg" class="header-img" alt="Delivery Header">
+                <div class="status-badge granted">ACCESS GRANTED</div>
+                <p class="response-text">{{ .Response }}</p>
 
-            {{ if .IsDelivered }}
-                <img src="/static/assets/stampPS.jpg" class="stamp" alt="Delivered Stamp">
-                <p class="date">
-                    Delivered on:
-                    <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
-                </p>
-            {{ else }}
-                <img src="/static/assets/horse.jpg" style="width: auto; height: 150px; object-fit: contain; border: 1px solid #333; margin-bottom: 20px; max-width: 100%;" alt="Pending Stamp">
-                <p class="date">
-                    <strong>Post Master Lipwig is on the way on his horse!</strong><br>
-                    Scheduled for:
-                    <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
-                </p>
+                {{ if .IsDelivered }}
+                    <div class="stamp-container" style="position: relative; text-align: center; margin-bottom: 30px;">
+                        <img src="/static/assets/stampPS.jpg" 
+                             style="width: 140px; height: auto; transform: rotate(-12deg); opacity: 0.4;" 
+                             alt="Delivered Stamp">
+                        <p class="date" style="font-family: 'Georgia', serif; margin-top: -80px; color: var(--accent-green); font-weight: bold;">
+                            Delivered on: {{ .Delivery.Format "January 02, 2006" }}
+                        </p>
+                    </div>
 
-            {{ end }}
+                    <div class="letter-body" style="border-top: 2px dashed #d7ccc8; padding-top: 20px;">
+                        <h2 style="font-family: 'Georgia', serif; font-size: 1.1rem; text-transform: uppercase;">Official Correspondence</h2>
+                        
+                        <p><strong>From:</strong> {{ .Post.Email }}</p>
+                        
+                        <div class="message-text" style="background: #fffcf5; padding: 20px; border: 1px solid #e0d5c1; font-style: italic; line-height: 1.6; margin: 20px 0; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);">
+                            "{{ .Post.Message }}"
+                        </div>
 
-        {{ else }}
+                        <div class="attachments-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                            {{ if .Post.Images }}
+                                <div>
+                                    <label style="font-size: 0.7rem;">Visual Evidence:</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        {{ range .Post.Images }}
+                                            <img src="/uploads/{{ . }}" style="width: 80px; height: 80px; object-fit: cover; border: 3px solid white; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transform: rotate(2deg);">
+                                        {{ end }}
+                                    </div>
+                                </div>
+                            {{ end }}
 
-            {{ if eq .Response "Waybill not found" }}
-
-                <img src="/static/assets/notFound.jpg" class="header-img" alt="Not Found">
-                <div class="status-badge denied">ACCESS DENIED</div>
-                <p class="response-text error-text">{{ .Response }}</p>
-
-                <div class="stamp-wrapper">
-                    <small class="overlap-text">
-                        Even the Librarian couldn’t find this waybill
-                    </small>
-                    <img src="/static/assets/stampAM.jpg"
-                         class="stamp-bg"
-                         alt="Not Found Stamp">
-                </div>
-
-                <p class="date hint-text">
-                    Maybe you should check the waybill number again?
-                </p>
-
-            {{ else if eq .Response "Failed to check delivery status" }}
-
-                <img src="/static/assets/failed.jpg" class="header-img" alt="System Failure">
-                <div class="status-badge denied">ACCESS DENIED</div>
-                <p class="response-text error-text">{{ .Response }}</p>
-
-                <div class="stamp-wrapper">
-                    <small class="overlap-text">
-                        Post Master Lipwig had a bad day.
-                    </small>
-                    <img src="/static/assets/stampPS.jpg"
-                         class="stamp-bg"
-                         alt="Access Failed">
-                </div>
-
-                <p class="date hint-text">
-                    Post Master Lipwig would probably know.
-                </p>
+                            {{ if .Post.Attachments }}
+                                <div>
+                                    <label style="font-size: 0.7rem;">Official Documents:</label>
+                                    <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
+                                        {{ range .Post.Attachments }}
+                                            <li><a href="/uploads/{{ . }}" style="color: var(--border-brown); text-decoration: underline;">📎 {{ . }}</a></li>
+                                        {{ end }}
+                                    </ul>
+                                </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                {{ else }}
+                    <img src="/static/assets/horse.jpg" style="width: auto; height: 150px; object-fit: contain; border: 1px solid #333; margin-bottom: 20px; max-width: 100%;" alt="Pending Stamp">
+                    <p class="date">
+                        <strong>Post Master Lipwig is on the way on his horse!</strong><br>
+                        Scheduled for:
+                        <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
+                    </p>
+                {{ end }}
 
             {{ else }}
 
-                <img src="/static/assets/vimes.jpg" class="header-img" alt="Invalid Access">
-                <div class="status-badge denied">ACCESS DENIED</div>
-                <p class="response-text error-text">{{ .Response }}</p>
+                {{ if eq .Response "Waybill not found" }}
 
-                <div class="stamp-wrapper">
-                    <small class="overlap-text">
-                        Are you perhaps being smart?
-                    </small>
-                    <img src="/static/assets/citywatch.jpg"
-                         class="stamp-bg"
-                         alt="Invalid Key">
-                </div>
+                    <img src="/static/assets/notFound.jpg" class="header-img" alt="Not Found">
+                    <div class="status-badge denied">ACCESS DENIED</div>
+                    <p class="response-text error-text">{{ .Response }}</p>
 
-                <p class="date hint-text">
-                    Lord Commander Vimes knows what to do with smart folks.<br>
-                    Please contact the sender for the correct key.
-                </p>
+                    <div class="stamp-wrapper">
+                        <small class="overlap-text">
+                            Even the Librarian couldn’t find this waybill
+                        </small>
+                        <img src="/static/assets/stampAM.jpg"
+                             class="stamp-bg"
+                             alt="Not Found Stamp">
+                    </div>
+
+                    <p class="date hint-text">
+                        Maybe you should check the waybill number again?
+                    </p>
+
+                {{ else if eq .Response "Failed to check delivery status" }}
+
+                    <img src="/static/assets/failed.jpg" class="header-img" alt="System Failure">
+                    <div class="status-badge denied">ACCESS DENIED</div>
+                    <p class="response-text error-text">{{ .Response }}</p>
+
+                    <div class="stamp-wrapper">
+                        <small class="overlap-text">
+                            Post Master Lipwig had a bad day.
+                        </small>
+                        <img src="/static/assets/stampPS.jpg"
+                             class="stamp-bg"
+                             alt="Access Failed">
+                    </div>
+
+                    <p class="date hint-text">
+                        Post Master Lipwig would probably know.
+                    </p>
+
+                {{ else }}
+
+                    <img src="/static/assets/vimes.jpg" class="header-img" alt="Invalid Access">
+                    <div class="status-badge denied">ACCESS DENIED</div>
+                    <p class="response-text error-text">{{ .Response }}</p>
+
+                    <div class="stamp-wrapper">
+                        <small class="overlap-text">
+                            Are you perhaps being smart?
+                        </small>
+                        <img src="/static/assets/citywatch.jpg"
+                             class="stamp-bg"
+                             alt="Invalid Key">
+                    </div>
+
+                    <p class="date hint-text">
+                        Lord Commander Vimes knows what to do with smart folks.<br>
+                        Please contact the sender for the correct key.
+                    </p>
+
+                {{ end }}
 
             {{ end }}
 
-        {{ end }}
+            <br>
+            <a href="/access-post" class="btn-back">
+                &larr; Search Another Waybill
+            </a>
 
-        <br>
-        <a href="/access-post" class="btn-back">
-            ← Search Another Waybill
-        </a>
-
+        </div>
     </div>
-</div>
 
 </body>
 </html>
