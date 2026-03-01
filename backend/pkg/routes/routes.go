@@ -153,12 +153,22 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		Key:       key,
 	}
 	isDelivered, res := database.CheckDeliveryStatus(d.DBObj, ap)
-	data := struct {
-		IsDelivered bool
-		Result      string
-	}{
-		IsDelivered: isDelivered,
-		Result:      res,
+	if res == "Waybill not found" || res == "Wrong key for the waybill" {
+		data := struct {
+			IsDelivered bool
+			Res         string
+		}{
+			Res: res,
+		}
+		courierpg.Execute(w, data)
+	} else {
+		data := struct {
+			IsDelivered bool
+			Res         string
+		}{
+			IsDelivered: isDelivered,
+			Res:         res,
+		}
+		courierpg.Execute(w, data)
 	}
-	courierpg.Execute(w, data)
 }

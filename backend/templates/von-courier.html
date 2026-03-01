@@ -4,14 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Envoy Status</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #f8f9fa; 
+        }
+        .container { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            text-align: center; 
+            max-width: 400px; 
+            width: 90%; 
+        }
+        .icon { font-size: 50px; margin-bottom: 20px; }
+        h1 { color: #2c3e50; margin: 0 0 10px 0; font-size: 24px; }
+        .message { color: #7f8c8d; line-height: 1.6; margin-bottom: 30px; }
+        .btn-back { 
+            background: #3498db; 
+            color: white; 
+            text-decoration: none; 
+            padding: 12px 25px; 
+            border-radius: 6px; 
+            transition: background 0.3s; 
+        }
+        .btn-back:hover { background: #2980b9; }
+    </style>
 </head>
 <body>
-    {{ if .IsDelivered }}
-        <h1>Post has been delivered</h1>
-        {{ .Result }}
-    {{ else }}
-        <h1>Post has not been delivered</h1>
-        {{ .Result }}
-    {{ end }}
+    <div class="container">
+        <div class="icon">
+            {{ if .IsDelivered }} ✅ {{ else }} ⏳ {{ end }}
+        </div>
+
+        <h1>{{ if .IsDelivered }}Delivered{{ else }}Status Update{{ end }}</h1>
+        
+        <p class="message">{{ .Result }}</p>
+
+        <a href="/" class="btn-back">Check Another</a>
+    </div>
 </body>
 </html>
