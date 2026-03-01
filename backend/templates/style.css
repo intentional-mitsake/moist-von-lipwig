@@ -11,23 +11,16 @@
    Background Atmosphere
 ========================= */
 body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    min-height: 100vh;
-    background: linear-gradient(var(--overlay), var(--overlay)),
-                url('/static/assets/postoffice.jpg') no-repeat center center fixed;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                url('/static/assets/postoffice.jpg');
     background-size: cover;
-    position: relative;
-    color: var(--ink-brown);
-}
-
-body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    /* Darker at the edges, slightly lighter in the center */
-    background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%);
-    z-index: 1;
+    background-attachment: fixed;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
 }
 
 /* =========================
