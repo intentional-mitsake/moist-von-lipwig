@@ -99,7 +99,7 @@ func InsertPost(db *sql.DB, post *models.Post) error {
 func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 	rows, err := db.Query(
 		`
-		SELECT post_id, delivery, is_delivered FROM posts 
+		SELECT post_id, delivery, is_delivered, email FROM posts 
 		WHERE delivery BETWEEN $1 AND $2;
 		`,
 		time.Now(),
@@ -112,10 +112,10 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 	var delivery []config.Delivery
 	defer rows.Close() //closing the rows after we are done
 	for rows.Next() {  //preps next row to rea
-		var id string
+		var id, email string
 		var date time.Time
 		var isDelivered bool
-		err := rows.Scan(&id, &date, &isDelivered)
+		err := rows.Scan(&id, &date, &isDelivered, &email)
 		if err != nil {
 			logger.Error("Error while scanning the rows", "error", err)
 			return nil, err
@@ -124,6 +124,7 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 			PostID:      id,
 			Delivery:    date,
 			IsDelivered: isDelivered,
+			Email:       email,
 		})
 		if err = rows.Err(); err != nil {
 			logger.Error("Error while scanning the rows", "error", err)

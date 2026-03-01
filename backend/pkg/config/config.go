@@ -16,6 +16,7 @@ type Delivery struct {
 	PostID      string
 	Delivery    time.Time
 	IsDelivered bool
+	Email       string
 }
 
 func LoadDBConfig() *Config {
