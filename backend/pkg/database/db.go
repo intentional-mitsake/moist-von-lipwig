@@ -97,10 +97,10 @@ func InsertPost(db *sql.DB, post *models.Post) error {
 }
 
 func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
-	rows, err := db.Query(
+	rows, err := db.Query( //for efficiency only get the ones that are not delivered
 		`
 		SELECT post_id, delivery, is_delivered, email FROM posts 
-		WHERE delivery BETWEEN $1 AND $2;
+		WHERE delivery BETWEEN $1 AND $2 AND is_delivered = false;
 		`,
 		time.Now(),
 		time.Now().Add(3*24*time.Hour),
