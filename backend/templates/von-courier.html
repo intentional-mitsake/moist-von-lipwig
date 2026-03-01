@@ -3,51 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Envoy Status</title>
+    <title>Post Status - Envoy</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            background-color: #f8f9fa; 
+        :root {
+            --error-red: #e74c3c;
+            --success-green: #27ae60;
+            --pending-orange: #f39c12;
+            --bg-gray: #f4f7f6;
         }
-        .container { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-            text-align: center; 
-            max-width: 400px; 
-            width: 90%; 
-        }
-        .icon { font-size: 50px; margin-bottom: 20px; }
-        h1 { color: #2c3e50; margin: 0 0 10px 0; font-size: 24px; }
-        .message { color: #7f8c8d; line-height: 1.6; margin-bottom: 30px; }
-        .btn-back { 
-            background: #3498db; 
-            color: white; 
-            text-decoration: none; 
-            padding: 12px 25px; 
-            border-radius: 6px; 
-            transition: background 0.3s; 
-        }
-        .btn-back:hover { background: #2980b9; }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-gray); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        
+        .card { background: white; width: 100%; max-width: 400px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; text-align: center; padding-bottom: 30px; }
+        
+        .header-img { width: 100%; height: 180px; object-fit: cover; }
+        
+        .content { padding: 20px; }
+
+        .status-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-bottom: 15px; }
+        
+        .denied { background: #fdedec; color: var(--error-red); }
+        .granted { background: #eafaf1; color: var(--success-green); }
+
+        .response-text { font-size: 1.1rem; color: #2c3e50; margin: 10px 0; }
+        
+        .stamp { width: 120px; margin-top: 20px; transform: rotate(-10deg); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1)); }
+        
+        .date { color: #7f8c8d; font-size: 0.85rem; margin-top: 5px; }
+
+        .btn-back { display: inline-block; margin-top: 25px; color: #3498db; text-decoration: none; font-size: 0.9rem; font-weight: bold; }
+        .stamp-wrapper {
+    position: relative;
+    padding: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px; 
+}
+
+.overlap-text {
+    position: relative;
+    z-index: 2; /* Forces text to the front */
+    font-weight: bold;
+    color: #000000;
+}
+
+.stamp-bg {
+    position: absolute;
+    z-index: 1; /* Places the image behind the text */
+    width: 124px;
+    opacity: 0.366; 
+    filter: grayscale(1);
+    transform: rotate(16deg); 
+    pointer-events: none;
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">
-            {{ if .IsDelivered }} ✅ {{ else }} ⏳ {{ end }}
+
+<div class="card">
+    <div class="content">
+        {{ if .Show }}
+            <img src="/assets/delivery.jpg" class="header-img" alt="Delivery Header">
+            <div class="status-badge granted">ACCESS GRANTED</div>
+            <p class="response-text">{{ .Response }}</p>
+
+            {{ if .isDelivered }}
+                <img src="/assets/stampPS.jpg" class="stamp" alt="Post Scriptum Delivered">
+                <p class="date">Delivered on: <strong>{{ .Delivery.Format "January 02, 2006" }}</strong></p>
+            {{ else }}
+                <img src="/assets/horse.jpg" class="stamp" alt="Ante Meridiem Pending">
+                <p class="date">Scheduled for: <strong>{{ .Delivery.Format "January 02, 2006" }}</strong></p>
+            {{ end }}
+
+        {{ else }}
+        {{ if eq .Response "Waybill not found" }}
+               <div class="content">
+                <img src="/assets/notFound.jpg" class="header-img" alt="Librarian">
+                <div class="status-badge denied">ACCESS DENIED</div>
+                <p class="response-text" style="color: #e74c3c; font-weight: bold;">{{ .Response }}</p>
+                <div class="stamp-wrapper">
+                    <small class="overlap-text">Even the Librarian couldnt find this waybill</small>
+                    <img src="/assets/stampAM.jpg" class="stamp-bg" alt="Not Found" style="filter: grayscale(0); width: 120px; transform: rotate(15deg);"><!--Grayscale off-->
+                </div>
+                <p class="date" style="color: #073f64; ">Maybe you should check the waybill number again?</p>
         </div>
+        {{ else if eq .Response "Failed to check delivery status" }}
+               <div class="content">
+                <img src="/assets/failed.jpg" class="header-img" alt="City Watch">
+                <div class="status-badge denied">ACCESS DENIED</div>
+                <p class="response-text" style="color: #e74c3c; font-weight: bold;">{{ .Response }}</p>
+                <div class="stamp-wrapper">
+                    <small class="overlap-text">Post Master Lipwig had a bad day.</small>
+                    <img src="/assets/stampPS.jpg" class="stamp-bg" alt="Couldnt Access" style="filter: grayscale(0);  width: 120px; transform: rotate(15deg);">
+                </div>
+                <p class="date" style="color: #073f64; ">Post Master Lipwig would probably know.</p>
+        </div>
+        {{ else }}
+            <div class="content">
+                <img src="/assets/vimes.jpg" class="header-img" alt="City Watch">
+                <div class="status-badge denied">ACCESS DENIED</div>
+                <p class="response-text" style="color: #e74c3c; font-weight: bold;">{{ .Response }}</p>
+                <div class="stamp-wrapper">
+                    <small class="overlap-text">Are you perhaps being smart?</small>
+                    <img src="/assets/citywatch.jpg" class="stamp-bg" alt="Invalid Access">
+                </div>
+                <p class="date" style="color: #073f64; ">Please contact the sender for the correct key.</p>
+            </div>
+        {{ end }}
+        {{ end }}
 
-        <h1>{{ if .IsDelivered }}Delivered{{ else }}Status Update{{ end }}</h1>
-        
-        <p class="message">{{ .Result }}</p>
-
-        <a href="/" class="btn-back">Check Another</a>
+        <br>
+        <a href="/access-post" class="btn-back">← Search Another Waybill</a>
     </div>
+</div>
+
 </body>
 </html>

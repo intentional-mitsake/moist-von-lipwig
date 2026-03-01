@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/database"
@@ -9,6 +10,7 @@ import (
 	"moist-von-lipwig/pkg/models"
 	"moist-von-lipwig/pkg/services"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -26,6 +28,8 @@ func CreateRouter(db *sql.DB) http.Handler {
 	//create a fileserver so that static files can be served
 	//every time a fiel is requested, server looks for it in the templates folder
 	fs := http.FileServer(http.Dir("./templates"))
+	imgServer := http.FileServer(http.Dir("./templates/assets"))
+	mux.Handle("/assets/", http.StripPrefix("/assets/", imgServer))
 	//if the request arives with '/static/' , thsi will remvoe the '/static/' part
 	//and search for the remaining part in fs-->./templates
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
@@ -133,6 +137,13 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Post inserted successfully")
 }
 
+type data struct {
+	Show        bool
+	IsDelivered bool
+	Response    string
+	Delivery    time.Time
+}
+
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -141,7 +152,7 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		//http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		logger.Error("Failed to parse form", "error", err)
 		return
 	}
@@ -152,23 +163,37 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		WaybillID: waybill,
 		Key:       key,
 	}
-	isDelivered, res := database.CheckDeliveryStatus(d.DBObj, ap)
-	if res == "Waybill not found" || res == "Wrong key for the waybill" {
-		data := struct {
-			IsDelivered bool
-			Res         string
-		}{
-			Res: res,
-		}
-		courierpg.Execute(w, data)
-	} else {
-		data := struct {
-			IsDelivered bool
-			Res         string
-		}{
-			IsDelivered: isDelivered,
-			Res:         res,
-		}
-		courierpg.Execute(w, data)
+	isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
+	if err != nil {
+		//http.Error(w, "Failed to check delivery status", http.StatusBadRequest)
+		logger.Error("Failed to check delivery status", "error", err)
+	}
+	var dd data
+	switch res {
+	case 1: //waybill not found
+		//http.Error(w, "Waybill not found", http.StatusBadRequest)
+		//logger.Info("Waybill not found")
+		dd.Show = false
+		dd.Response = "Waybill not found"
+	case 2: //failed to check delivery status
+		//http.Error(w, "Failed to check delivery status", http.StatusBadRequest)
+		//logger.Error("Failed to check delivery status", "error", err)
+		dd.Show = false
+		dd.Response = "Failed to check delivery status"
+	case 3: //key not matching
+		//http.Error(w, "Key not matching", http.StatusBadRequest)
+		//logger.Error("Key not matching", "error", err)
+		dd.Show = false
+		dd.Response = "Key not matching"
+	case 4: //match found
+		dd.Show = true
+		dd.IsDelivered = isDelivered
+		dd.Response = fmt.Sprintf("Delivery Status: %t", dd.IsDelivered)
+		dd.Delivery = dt
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err = courierpg.Execute(w, dd)
+	if err != nil {
+		logger.Error("Template loading failed", "error", err)
 	}
 }

@@ -152,27 +152,28 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	}
 }
 
-func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (status bool, res string) {
+func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (status bool, res int, delivery time.Time, e error) {
 	var isDelivered bool
 	var hashedPassword string
+	var dt time.Time
 	err := db.QueryRow(
 		`
-        SELECT is_delivered, pair->>'Key'
+        SELECT delivery, is_delivered, pair->>'Key'
         FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
         WHERE pair->>'WaybillID' = $1
         LIMIT 1`, accesspair.WaybillID,
-	).Scan(&isDelivered, &hashedPassword)
+	).Scan(&dt, &isDelivered, &hashedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, "Waybill not found" //waybill not found
+			return false, 1, time.Time{}, err //waybill not found
 		}
 		logger.Error("Failed to check delivery status", "error", err)
-		return false, err.Error()
+		return false, 2, time.Time{}, err
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(accesspair.Key))
 	if err != nil {
 		logger.Error("Key not matching", "error", err)
-		return false, "Wrong key for the waybill"
+		return false, 3, time.Time{}, err
 	}
-	return isDelivered, "Access Pair correct"
+	return isDelivered, 4, delivery, nil
 }
