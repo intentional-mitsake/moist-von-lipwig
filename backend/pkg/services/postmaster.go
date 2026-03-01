@@ -22,11 +22,13 @@ import (
 
 func CronJobs(db *sql.DB) *cron.Cron {
 	c := cron.New()
-	err := c.AddFunc("@every 30s", func() {
-		schedule := CheckDeliveryDates(db)
-		fmt.Println(schedule)
+	var schedule []config.Delivery
+	err := c.AddFunc("@every 10s", func() { //30s only for debugging-->should be 3 days in prod
+		schedule = CheckDeliveryDates(db)
+		//fmt.Println(schedule)
 		//fmt.Println(time.Duration(time.Now()))
 		//fmt.Println(time.Now().Add(3 * 24 * time.Hour))
+		ScheduleDelivery(c, db, schedule)
 	})
 	if err != nil {
 		logger.Error("Error running cron job", "error", err)
@@ -51,3 +53,30 @@ func splitEmail(email string) (string, string) {
 	parts := strings.Split(email, "@")
 	return parts[0], parts[1]
 }
+
+func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
+	//cron format: "sec min hr dom mon dow" there are others but we will use this
+	//eg: "10 30 12 11 13 *" -> 10th sec, 30th min, 12th hr, 11th day, 13th month, *(skips the day of the week)
+	//i wiil convert the delivery date to cron format here to prepare a specific schedule
+	scheduledDates := make(map[string][]string) //[cronFormat]postID
+	for _, post := range schedule {
+		p := post
+		//mt.Println(day)
+		//fmt.Println(month)
+		scheduledDate := fmt.Sprintf("0 0 0 %d %d", //sec min hr dom mon dow--> 0 0 0 day month *
+			//precision down to the seconds doesnt matter
+			p.Delivery.Day(),
+			p.Delivery.Month(),
+		)
+		//for efficiency have a list of scheduled dates to group same day deliveries
+		if scheduledDates[scheduledDate] == nil { //if the date is not in the map, add it
+			scheduledDates[scheduledDate] = []string{p.PostID}
+		} else { //if the date is in the map, append this postID to existing list of postIDs
+			scheduledDates[scheduledDate] = append(scheduledDates[scheduledDate], p.PostID)
+		}
+	}
+	fmt.Println(scheduledDates)
+}
+
+func AccessChange() {}
+func SendEmail()    {}
