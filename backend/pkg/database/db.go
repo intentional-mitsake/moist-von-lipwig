@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/models"
@@ -153,27 +154,30 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 }
 
 func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (status bool, res int, delivery time.Time, e error) {
-	var isDelivered bool
-	var hashedPassword string
-	var dt time.Time
-	err := db.QueryRow(
-		`
-        SELECT delivery, is_delivered, pair->>'Key'
-        FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
-        WHERE pair->>'WaybillID' = $1
-        LIMIT 1`, accesspair.WaybillID,
-	).Scan(&dt, &isDelivered, &hashedPassword)
+	rows, err := db.Query(`
+    SELECT delivery, is_delivered, pair->>'Key'
+    FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
+    WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, 1, time.Time{}, err //waybill not found
-		}
-		logger.Error("Failed to check delivery status", "error", err)
+		logger.Error("Database query failed", "error", err)
 		return false, 2, time.Time{}, err
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(accesspair.Key))
-	if err != nil {
-		logger.Error("Key not matching", "error", err)
-		return false, 3, time.Time{}, err
+	defer rows.Close()
+	for rows.Next() {
+		var tempDelivery time.Time
+		var tempIsDelivered bool
+		var tempHashedPassword string
+
+		if err := rows.Scan(&tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
+			continue
+		}
+		err = bcrypt.CompareHashAndPassword([]byte(tempHashedPassword), []byte(accesspair.Key))
+		if err == nil {
+			// match found
+			return tempIsDelivered, 4, tempDelivery, nil
+		}
 	}
-	return isDelivered, 4, delivery, nil
+
+	//no match
+	return false, 3, time.Time{}, fmt.Errorf("invalid waybill or key")
 }

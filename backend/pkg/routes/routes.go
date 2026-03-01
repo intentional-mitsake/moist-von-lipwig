@@ -10,6 +10,7 @@ import (
 	"moist-von-lipwig/pkg/models"
 	"moist-von-lipwig/pkg/services"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,11 +29,15 @@ func CreateRouter(db *sql.DB) http.Handler {
 	//create a fileserver so that static files can be served
 	//every time a fiel is requested, server looks for it in the templates folder
 	fs := http.FileServer(http.Dir("./templates"))
-	imgServer := http.FileServer(http.Dir("./templates/assets"))
-	mux.Handle("/assets/", http.StripPrefix("/assets/", imgServer))
 	//if the request arives with '/static/' , thsi will remvoe the '/static/' part
 	//and search for the remaining part in fs-->./templates
-	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+	staticHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, ".css") {
+			w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		}
+		fs.ServeHTTP(w, r)
+	})
+	mux.Handle("/static/", http.StripPrefix("/static/", staticHandler))
 	//have to do all the fileserver thing cuz when the indexHandler is called
 	//it reads the index.html, when it sees style.css is needed it cant find it wihtout hte above setup
 	mux.HandleFunc("/", indexHandler)
@@ -145,6 +150,11 @@ type data struct {
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		//need to allow get requests to return back to the main page
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -190,6 +200,7 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		dd.IsDelivered = isDelivered
 		dd.Response = fmt.Sprintf("Delivery Status: %t", dd.IsDelivered)
 		dd.Delivery = dt
+		logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = courierpg.Execute(w, dd)
