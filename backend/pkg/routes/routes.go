@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"html/template"
+	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/database"
 	lg "moist-von-lipwig/pkg/log"
 	"moist-von-lipwig/pkg/models"
@@ -38,6 +39,7 @@ func CreateRouter(db *sql.DB) http.Handler {
 }
 
 var tmpl = template.Must(template.ParseFiles("templates/index.html"))
+var courierpg = template.Must(template.ParseFiles("templates/von-courier.html"))
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	//to allow only get requests
@@ -96,7 +98,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println(uploadsPath)
 	new_post := models.Post{
 		PostID:      uuid.New().String(),
-		AccessPairs: []models.AccessPair{},
+		AccessPairs: []config.AccessPair{},
 		Email:       email,
 		Message:     hm,
 		Attachments: attachmentsPath,
@@ -110,7 +112,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "Failed to hash key", http.StatusBadRequest)
 		}
-		new_post.AccessPairs = append(new_post.AccessPairs, models.AccessPair{
+		new_post.AccessPairs = append(new_post.AccessPairs, config.AccessPair{
 			WaybillID: waybilIDs[i],
 			Key:       hk,
 		})
@@ -146,4 +148,9 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	waybill := r.FormValue("waybill")
 	key := r.FormValue("key")
 	logger.Info("Waybill request received", "waybill", waybill, "key", key)
+	ap := config.AccessPair{
+		WaybillID: waybill,
+		Key:       key,
+	}
+	courierpg.Execute(w, ap)
 }

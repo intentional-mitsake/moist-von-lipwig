@@ -19,6 +19,11 @@ type Delivery struct {
 	Email       string
 }
 
+type AccessPair struct {
+	WaybillID string
+	Key       string
+}
+
 func LoadDBConfig() *Config {
 	godotenv.Load(".env")
 	source := os.Getenv("DBCONN")
