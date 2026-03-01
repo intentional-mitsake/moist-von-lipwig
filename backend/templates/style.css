@@ -1,0 +1,223 @@
+:root {
+    --paper-color: #fdf5e6;
+    --ink-brown: #3e2723;
+    --border-brown: #5d4037;
+    --accent-red: #c62828;
+    --accent-green: #2e7d32;
+    --overlay: rgba(0, 0, 0, 0.7);
+}
+
+/* =========================
+   Background Atmosphere
+========================= */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(var(--overlay), var(--overlay)),
+                url('/static/assets/postoffice.jpg') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+    color: var(--ink-brown);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    /* Darker at the edges, slightly lighter in the center */
+    background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%);
+    z-index: 1;
+}
+
+/* =========================
+   Fixed Header (Ankh-Morpork Style)
+========================= */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 25px;
+    padding: 10px 40px;
+    background: #efe4d0; /* Slightly darker parchment */
+    border-bottom: 3px double var(--border-brown);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.logo {
+    width: 120px;
+    height: 120px;
+    
+    /* 1. Change 'cover' to 'contain' to show the whole image */
+    object-fit: contain; 
+    
+    /* 2. Add padding so the words don't touch the border */
+    padding: 5px; 
+    
+    /* 3. Ensure the background matches your parchment theme */
+    background: var(--paper-color); 
+    
+    border-radius: 50%;
+    border: 3px double var(--border-brown);
+    transform: rotate(-5deg);
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Search Form in Header */
+.search-form input {
+    padding: 12px; /* Bigger vertical padding */
+    font-size: 1rem;
+    width: 220px; /* Wider inputs */
+    background: #fdfaf0;
+    border: 1px solid var(--border-brown);
+}
+
+
+.search-form button {
+    padding: 12px 25px;
+    background: var(--border-brown);
+    border: none;
+    color: var(--paper-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap; /* Prevents text from breaking into two lines */
+    font-weight: bold;
+}
+
+/* =========================
+   Main Content Card
+========================= */
+.main-wrapper {
+    position: relative;
+    z-index: 5; /* Ensures it stays above the dark background overlay */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Keeps the card near the top but below header */
+    padding-top: 180px; /* Adjust this to match the height of your top-bar */
+    padding-bottom: 50px;
+}
+
+.card {
+    width: 95%;
+    margin: 0 auto;
+    background-image: url('https://www.transparenttextures.com/patterns/pinstriped-suit.png'); 
+    background-blend-mode: multiply;
+    background-color: var(--paper-color); /* Parchment color */
+    border: 2px solid var(--border-brown);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    border-radius: 2px; /* Sharp corners like a ledger */
+    position: relative;
+    z-index: 6;
+    max-width: 800px; /* Slightly slimmer for better proportions */
+}
+
+.header-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-bottom: 2px solid var(--border-brown);
+}
+
+.content {
+    padding: 30px 45px;
+}
+
+h1 {
+    font-family: 'Georgia', serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 1px solid #d7ccc8;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+/* =========================
+   Form Elements (Ink & Quill style)
+========================= */
+/* Update the form grid to be more intentional */
+form {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr; /* Asymmetric look like old ledgers */
+    gap: 30px;
+    align-items: start;
+}
+
+.form-group {
+    margin-bottom: 15px; /* More space between rows */
+}
+
+
+
+.full-width {
+    grid-column: span 2;
+}
+
+/* Label styling to match the Courier theme */
+label {
+    font-family: 'Georgia', serif;
+    text-transform: uppercase;
+    color: var(--border-brown);
+    border-left: 3px solid var(--border-brown);
+    padding-left: 10px;
+    margin-bottom: 8px;
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+/* Fix the Access IDs inputs so they sit side-by-side */
+.access-ids {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Style the buttons to look like small ink stamps */
+.access-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.access-controls button {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border-brown);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.access-controls button:hover {
+    background: var(--border-brown);
+    color: var(--paper-color);
+}
+
+/* The Big Submit Button */
+.stamp-btn {
+    grid-column: span 2;
+    margin-top: 20px;
+    padding: 20px !important;
+    font-size: 1.1rem !important;
+    background: var(--border-brown) !important;
+    border: 4px double var(--paper-color) !important;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+}
+
+/* Responsive adjustment */
+@media (max-width: 800px) {
+    form {
+        grid-template-columns: 1fr;
+    }
+    .full-width {
+        grid-column: span 1;
+    }
+}

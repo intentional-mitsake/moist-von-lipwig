@@ -2,123 +2,142 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Post Station</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-    <h1>Welcome to the Post Station</h1>
-    <form action="/access-post" method="POST" enctype="application/x-www-form-urlencoded">
-            <div class="access-pair">
-                <label for="waybill">Waybill ID</label>
-                <input type="text" id="waybill" name="waybill" placeholder="afjkhweifo" required>
-                <label for="key">Courier Key</label>
-                <input type="password" id="key" name="key" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="btn-search">Locate Post</button>
-    </form>
-    <br>
-    <form action="/post-letter" method="POST" enctype="multipart/form-data"  onsubmit="return emailIsValid()">
-        <div>
-            <label>Access Ids:</label><br>
+
+   <body>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <!-- Logo -->
+        <img src="/static/assets/logo.jpg" alt="Logo" class="logo">
+
+        <!-- Search -->
+        <form action="/access-post" method="POST" class="search-form">
+            <input type="text" name="waybill" placeholder="Waybill ID" required>
+            <input type="password" name="key" placeholder="Courier Key" required>
+            <button type="submit">Locate Post</button>
+        </form>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+        <div class="card">
+            <img src="/static/assets/failed.jpg" class="header-img" alt="Post Office">
+
+            <div class="content">
+                <h1>Welcome to the Post Station</h1>
+                <form action="/post-letter" method="POST" enctype="multipart/form-data" onsubmit="return emailIsValid()">
+    
+    <div class="form-group">
+        <label>Access Pairs(Waybill ID and Courier Key):</label>
         <div class="access-ids">
             <input type="text" name="waybill-ids" placeholder="John Doe" required>
             <input type="password" name="key" placeholder="afjwh" required>
         </div>
-        <div class="error">
-            <!--error message-->
-        </div>
         <div class="access-controls">
-            <button type="button" onclick="addAccessIds()">+ Add</button>
-            <button type="button" onclick="removeAccessIds()" style="color: #e74c3c;">- Remove</button>
+            <button type="button" onclick="addAccessIds()">+ Add Recipient</button>
+            <button type="button" onclick="removeAccessIds()" style="color: var(--accent-red); border-color: var(--accent-red);"> - Remove</button>
         </div>
+        <div class="error"></div>
     </div>
-    <div>
-        <label>Email:</label>
+
+    <div class="form-group">
+        <label>Notification Email:</label>
         <input type="email" name="email" placeholder="Lx5Q3@example.com" required>
-        <div class="emailerror">
+        <div class="emailerror"></div>
+    </div>
 
+    <div class="form-group full-width">
+        <label>Message for whoever gets to see it at delivery(Which is guranteed by the Post Master Lipwig):</label>
+        <textarea name="message" rows="5" placeholder="Write your letter here..." required></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Images (Post Master Lipwig respects everyones privacy):</label>
+        <input type="file" name="images" accept="image/*" multiple>
+    </div>
+
+    <div class="form-group">
+        <label>Attachments (Well... not really):</label>
+        <input type="file" name="attachments" multiple>
+    </div>
+
+    <button type="submit" class="stamp-btn">Seal and Send Post</button>
+</form>
+            </div>
         </div>
     </div>
 
-        <div>
-            <label>Message:</label><br>
-            <textarea name="message" rows="5" required></textarea>
-        </div>
+    <!-- JavaScript -->
+    <script>
+        function addAccessIds() {
+            const accessDiv = document.querySelector('.access-ids');
+            const error = document.querySelector('.error');
+            error.innerHTML = '';
 
-        <div>
-            <label>Images:</label><br>
-            <input type="file" name="images" accept="image/*" multiple>
-        </div>
+            if (accessDiv.children.length >= 16) {
+                error.innerHTML = 'You can only add up to 8 access ids';
+                error.style.color = 'red';
+                return;
+            }
 
-        <div>
-            <label>Attachments:</label><br>
-            <input type="file" name="attachments" multiple>
-        </div>
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'waybill-ids';
+            input.placeholder = 'John Doe';
+            input.required = true;
 
-        <br>
-        <button type="submit">Send Post</button>
-    </form>
-</body>
-<script type="text/javascript">
-    function addAccessIds() {
-        const accessDiv = document.querySelector('.access-ids');
-        const error = document.querySelector('.error');
-        //clear if there war an error
-        error.innerHTML = '';
-        if (accessDiv.children.length >= 16) {// 8 *2 = 16
-            //alert('You can only add up to 8 recipients');
-            error.innerHTML = 'You can only add up to 8 access ids';
-            error.style.color = 'red';
-            return;
+            const k = document.createElement('input');
+            k.type = 'password';
+            k.name = 'key';
+            k.placeholder = 'afjwh';
+            k.required = true;
+
+            accessDiv.appendChild(input);
+            accessDiv.appendChild(k);
         }
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.name = 'waybill-ids';
-        input.placeholder = 'John Doe';
-        input.required = true;
 
-        const k = document.createElement('input');
-        k.type = 'password';
-        k.name = 'key';
-        k.placeholder = 'afjwh';
-        k.required = true;
+        function removeAccessIds() {
+            const accessDiv = document.querySelector('.access-ids');
+            const error = document.querySelector('.error');
+            error.innerHTML = '';
 
-        accessDiv.appendChild(input);
-        accessDiv.appendChild(k);
-    }
-    function removeAccessIds() {
-        const accessDiv = document.querySelector('.access-ids');
-        const error = document.querySelector('.error');
-        error.innerHTML = '';//clear previous error
-        //dont remove if only one
-        if (accessDiv.children.length <= 2) {//pairs of id and key
-            //alert('You must have at least one recipient');
-            error.innerHTML = 'You must have at least one access id';
-            error.style.color = 'red';
-            return;
+            if (accessDiv.children.length <= 2) {
+                error.innerHTML = 'You must have at least one access id';
+                error.style.color = 'red';
+                return;
+            }
+
+            accessDiv.removeChild(accessDiv.lastElementChild);
+            accessDiv.removeChild(accessDiv.lastElementChild);
         }
-        accessDiv.removeChild(accessDiv.lastElementChild);
-        accessDiv.removeChild(accessDiv.lastElementChild);
-    }
 
-    function emailIsValid() {
-        const email = document.querySelector('input[name="email"]').value;
-        const error = document.querySelector('.emailerror');
-        const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-        if (email == null || email == "") {
-            error.innerHTML = 'Email is required';
-            error.style.color = 'red';
-            return false;
-        } else if (regex.test(email) == false) {
-            error.innerHTML = 'Invalid email address';
-            error.style.color = 'red';
-            return false;
-        }
-        else {
+        function emailIsValid() {
+            const email = document.querySelector('input[name="email"]').value;
+            const error = document.querySelector('.emailerror');
+            const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+            if (!email) {
+                error.innerHTML = 'Email is required';
+                error.style.color = 'red';
+                return false;
+            }
+
+            if (!regex.test(email)) {
+                error.innerHTML = 'Invalid email address';
+                error.style.color = 'red';
+                return false;
+            }
+
             error.innerHTML = '';
             return true;
         }
-    }
-</script>
+    </script>
+
+</body>
 </html>
