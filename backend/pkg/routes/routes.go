@@ -34,7 +34,7 @@ func CreateRouter(db *sql.DB) http.Handler {
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/db", dbCnfg.dbHandler)
 	mux.HandleFunc("/post-letter", dbCnfg.postHandler)
-	mux.HandleFunc("/access-post", dbCnfg.postHandler)
+	mux.HandleFunc("/access-post", dbCnfg.accessHandler)
 	return mux
 }
 
@@ -134,7 +134,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -152,5 +152,13 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		WaybillID: waybill,
 		Key:       key,
 	}
-	courierpg.Execute(w, ap)
+	isDelivered, res := database.CheckDeliveryStatus(d.DBObj, ap)
+	data := struct {
+		IsDelivered bool
+		Result      string
+	}{
+		IsDelivered: isDelivered,
+		Result:      res,
+	}
+	courierpg.Execute(w, data)
 }

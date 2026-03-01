@@ -12,6 +12,7 @@ import (
 
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
@@ -149,4 +150,29 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	if err != nil {
 		logger.Error("Failed to change delivery status", "error", err)
 	}
+}
+
+func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (status bool, res string) {
+	var isDelivered bool
+	var hashedPassword string
+	err := db.QueryRow(
+		`
+        SELECT is_delivered, pair->>'Key'
+        FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
+        WHERE pair->>'WaybillID' = $1
+        LIMIT 1`, accesspair.WaybillID,
+	).Scan(&isDelivered, &hashedPassword)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, "Waybill not found" //waybill not found
+		}
+		logger.Error("Failed to check delivery status", "error", err)
+		return false, err.Error()
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(accesspair.Key))
+	if err != nil {
+		logger.Error("Key not matching", "error", err)
+		return false, "Wrong key for the waybill"
+	}
+	return isDelivered, "Access Pair correct"
 }

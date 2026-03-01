@@ -6,6 +6,12 @@
     <title>Envoy Status</title>
 </head>
 <body>
-    
+    {{ if .IsDelivered }}
+        <h1>Post has been delivered</h1>
+        {{ .Result }}
+    {{ else }}
+        <h1>Post has not been delivered</h1>
+        {{ .Result }}
+    {{ end }}
 </body>
 </html>
