@@ -102,11 +102,9 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 		//so anything missed will be covered as well
 		`
 		SELECT post_id, delivery, is_delivered, email FROM posts 
-		WHERE delivery <= $1 + INTERVAL '24 hours'
+		WHERE delivery <= NOW() + INTERVAL '24 hours'
 		AND is_delivered = false;
-		`,
-		time.Now(),
-	)
+		`)
 	if err != nil {
 		logger.Error("Failed to get delivery dates", "error", err)
 		return nil, err
@@ -146,6 +144,7 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 		`,
 		pq.Array(postIDs), //used interval to add 24 hours to get deliveries <= now AND 24hours from now as well
 		//otherwise we miss deliveries to be made only hours later than the time CRONjob checked db
+		//swriched to any(postIDs) so that instead of delivery time, it checks for postIDs
 	)
 	if err != nil {
 		logger.Error("Failed to change delivery status", "error", err)

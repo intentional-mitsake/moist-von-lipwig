@@ -7,11 +7,12 @@ import (
 	"moist-von-lipwig/pkg/database"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/robfig/cron"
 )
 
-//check for delivery dates from the DB every 3 days
+//check for delivery dates from the DB every 3 days(decided daily now, perf impact wont be much)
 //this will vastly reduce the load on the server
 //there is a risk of some posts being missed which are posted after the last check
 //but have a delivery date before the next check
@@ -64,20 +65,33 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 		p := post
 		//mt.Println(day)
 		//fmt.Println(month)
-		scheduledDate := fmt.Sprintf("0 46 9 %d %d *", //sec min hr dom mon dow--> 0 0 0 day month *
+		scheduledDate := fmt.Sprintf("50 57 10 %d %d *", //sec min hr dom mon dow--> 0 0 0 day month *
 			//precision down to the seconds doesnt matter
 			p.Delivery.Day(),
 			p.Delivery.Month(),
 		)
-		//for efficiency have a list of scheduled dates to group same day deliveries
-		if scheduledDates[scheduledDate] == nil { //if the date is not in the map, add it
-			scheduledDates[scheduledDate] = []string{p.PostID}
-		} else { //if the date is in the map, append this postID to existing list of postIDs
-			scheduledDates[scheduledDate] = append(scheduledDates[scheduledDate], p.PostID)
-		}
 		emailMap[p.PostID] = p.Email //each post has an email and is unique
+		//IF DELIVERY DATE IS PAST
+		if isDeliveryPast(p.Delivery) {
+			//deliver immediately if delivery date is past
+			go func() { //have to ues local var for ids cuz risks of race condition
+				//can use emailmap cuz it will be the same as isnt changed in loop iterations
+				email := emailMap[p.PostID] //get the email of this postID
+				go SendEmail(email)         //mutliple posts are sent at same schedule so run parallel to reduce load
+				database.ChangeDeliveryStatus(db, []string{p.PostID})
+			}()
+		} else { //only add to map if delivery date is not past
+			//for efficiency have a list of scheduled dates to group same day deliveries
+			if scheduledDates[scheduledDate] == nil { //if the date is not in the map, add it
+				scheduledDates[scheduledDate] = []string{p.PostID}
+			} else { //if the date is in the map, append this postID to existing list of postIDs
+				scheduledDates[scheduledDate] = append(scheduledDates[scheduledDate], p.PostID)
+			}
+		}
+
 	}
 	fmt.Println(scheduledDates)
+
 	//most efficient will be to have one cron job for all the same dates
 	for cronShedule, postIDs := range scheduledDates {
 		//have to declare new variables inside the loop cuz
@@ -91,11 +105,18 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 				go SendEmail(email)       //mutliple posts are sent at same schedule so run parallel to reduce load
 			}
 			//doesnt need to be called for each post as they are all scheduled for the same date
-			database.ChangeDeliveryStatus(db) //this way even delivery dates we missed previously will be marked as delivered
+			database.ChangeDeliveryStatus(db, currentPostIDs) //this way even delivery dates we missed previously will be marked as delivered
 		})
 	}
 
 }
+
+func isDeliveryPast(schedule time.Time) bool {
+	now := time.Now()
+	return schedule.Before(now) //returns true if schedule is before now
+	//false if schedule is after cuurent day
+}
+
 func SendEmail(email string) {
 	fmt.Println(email)
 }
