@@ -6,10 +6,12 @@ import (
 	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/database"
 	"net"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/robfig/cron"
+	gomail "gopkg.in/gomail.v2"
 )
 
 //check for delivery dates from the DB every 3 days(decided daily now, perf impact wont be much)
@@ -118,5 +120,19 @@ func isDeliveryPast(schedule time.Time) bool {
 }
 
 func SendEmail(email string) {
-	fmt.Println(email)
+	//fmt.Println(email)
+	von := os.Getenv("VON")
+	pass := os.Getenv("PASS")
+	to := email
+	subject := "Moist Von Lipwig Post"
+	body := "Your post can be accessed now! \n\nMoist Von Lipwig"
+	m := gomail.NewMessage()
+	m.SetHeader("From", von)
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", body)
+	d := gomail.NewDialer("smtp.gmail.com", 587, von, pass)
+	if err := d.DialAndSend(m); err != nil {
+		logger.Error("Failed to send email:", "error", err)
+	}
 }

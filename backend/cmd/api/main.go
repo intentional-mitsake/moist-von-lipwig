@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"moist-von-lipwig/pkg/database"
 	"moist-von-lipwig/pkg/routes"
+	"moist-von-lipwig/pkg/services"
 	"net/http"
 	"os"
 )
@@ -36,6 +37,7 @@ func main() {
 	//listenandserve only returns error, thus unless the server crashes or we shut it, this wont be
 	//displayed if its after the func
 	logger.Info("Server starting", "address", addr)
+	services.SendEmail("gauravmunankarmi7@gmail.com")
 	server := http.Server{
 		Addr:    addr, //host:8848
 		Handler: router,
