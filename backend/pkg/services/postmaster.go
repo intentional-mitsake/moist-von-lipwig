@@ -26,7 +26,8 @@ import (
 func CronJobs(db *sql.DB) *cron.Cron {
 	c := cron.New()
 	var schedule []config.Delivery
-	err := c.AddFunc("@every 20s", func() { //30s only for debugging-->should be 3 days in prod
+	// sec min hr dom mon dow--> 0 20 10 * * * --> daily at 10am 20 minutes
+	err := c.AddFunc(" 0 20 10 * * *", func() { //30s only for debugging-->should be 3 days in prod
 		schedule = CheckDeliveryDates(db)
 		//fmt.Println(schedule)
 		//fmt.Println(time.Duration(time.Now()))
