@@ -1,0 +1,9 @@
+docker run -d \ runs uns the app in the background so it doesn't close when you close the terminal.
+  -p 8080:8080 \ aps the computer's port 8080 to the Docker container's port 8080. 
+  --name poststation_app \ automatically injects all the variables from your .env file into the app so your database strings and API keys work.
+  --env-file .env \
+  -v "$(pwd)/uploads:/root/uploads" \ htis links the uploads folder on your actual computer to the one inside the container. If a user uploads an image, it appears on your hard drive instantly. If you delete the container, the images stay safe
+  poststation
+
+
+

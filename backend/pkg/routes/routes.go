@@ -29,6 +29,7 @@ func CreateRouter(db *sql.DB) http.Handler {
 	//create a fileserver so that static files can be served
 	//every time a fiel is requested, server looks for it in the templates folder
 	fs := http.FileServer(http.Dir("./templates"))
+	us := http.FileServer(http.Dir("./uploads"))
 	//if the request arives with '/static/' , thsi will remvoe the '/static/' part
 	//and search for the remaining part in fs-->./templates
 	staticHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +38,7 @@ func CreateRouter(db *sql.DB) http.Handler {
 		}
 		fs.ServeHTTP(w, r)
 	})
+	mux.Handle("/uploads", http.StripPrefix("/uploads/", us))
 	mux.Handle("/static/", http.StripPrefix("/static/", staticHandler))
 	//have to do all the fileserver thing cuz when the indexHandler is called
 	//it reads the index.html, when it sees style.css is needed it cant find it wihtout hte above setup
@@ -105,17 +107,15 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to handle files", http.StatusBadRequest)
 	}
-	hm, err := services.HashIns(message, d.DBObj)
-	if err != nil {
-		http.Error(w, "Failed to hash message", http.StatusBadRequest)
-	}
+	//bcrypt is one way encryption
+	//hm, err := services.AESEncrypt([]byte(message))
 
 	//fmt.Println(uploadsPath)
 	new_post := models.Post{
 		PostID:      uuid.New().String(),
 		AccessPairs: []config.AccessPair{},
 		Email:       email,
-		Message:     hm,
+		Message:     message,
 		Attachments: attachmentsPath,
 		Images:      imguploadsPath,
 		CreatedAt:   now,
@@ -123,7 +123,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		IsDelivered: false,
 	}
 	for i, _ := range waybilIDs {
-		hk, err := services.HashIns(keys[i], d.DBObj)
+		hk, err := services.HashIns(keys[i])
 		if err != nil {
 			http.Error(w, "Failed to hash key", http.StatusBadRequest)
 		}

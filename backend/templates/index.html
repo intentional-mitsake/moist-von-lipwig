@@ -30,7 +30,7 @@
             <img src="/static/assets/failed.jpg" class="header-img" alt="Post Office">
 
             <div class="content">
-                <h1>Welcome to the Post Station</h1>
+                <h1>Welcome to Ankh Morpork Post Station</h1>
                 <form action="/post-letter" method="POST" enctype="multipart/form-data" onsubmit="return emailIsValid()">
     
     <div class="form-group">
@@ -40,7 +40,7 @@
             <input type="password" name="key" placeholder="afjwh" required>
         </div>
         <div class="access-controls">
-            <button type="button" onclick="addAccessIds()">+ Add Recipient</button>
+            <button type="button" onclick="addAccessIds()">+ Add</button>
             <button type="button" onclick="removeAccessIds()" style="color: var(--accent-red); border-color: var(--accent-red);"> - Remove</button>
         </div>
         <div class="error"></div>
@@ -53,7 +53,7 @@
     </div>
 
     <div class="form-group full-width">
-        <label>Message for whoever gets to see it at delivery(Which is guranteed by the Post Master Lipwig):</label>
+        <label>Message for delivery(Which is guranteed by the Post Master Lipwig....someday probably):</label>
         <textarea name="message" rows="5" placeholder="Write your letter here..." required></textarea>
     </div>
 
@@ -63,7 +63,7 @@
     </div>
 
     <div class="form-group">
-        <label>Attachments (Well... not really):</label>
+        <label>Attachments (Well... cant really say, he's new and all.):</label>
         <input type="file" name="attachments" multiple>
     </div>
 

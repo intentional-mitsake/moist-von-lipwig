@@ -46,3 +46,8 @@ func HandleFiles(fieldName string, r *http.Request) ([]string, error) {
 	}
 	return uploadsPath, nil
 }
+
+func ReturnFiles(w http.ResponseWriter, r *http.Request) {
+	filepath := r.URL.Query().Get("filepath")
+	http.ServeFile(w, r, filepath)
+}

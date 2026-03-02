@@ -160,7 +160,7 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
     WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
 	if err != nil {
 		logger.Error("Database query failed", "error", err)
-		return models.Post{}, false, 2, time.Time{}, err
+		return models.Post{}, false, 1, time.Time{}, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -172,6 +172,8 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
 		if err := rows.Scan(&postID, &tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
 			continue
 		}
+
+		logger.Info("Checking pair", "postID", postID, "hash", tempHashedPassword)
 		err = bcrypt.CompareHashAndPassword([]byte(tempHashedPassword), []byte(accesspair.Key))
 		if err == nil {
 			// match found
