@@ -65,8 +65,14 @@
                     <img src="/static/assets/horse.jpg" style="width: auto; height: 150px; object-fit: contain; border: 1px solid #333; margin-bottom: 20px; max-width: 100%;" alt="Pending Stamp">
                     <p class="date">
                         <strong>Post Master Lipwig is on the way on his horse!</strong><br>
-                        Scheduled for:
-                        <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
+                        <details class="delivery-reveal">
+                         <summary>Do you want to reveal the approximate delivery date?</summary>
+                            <div class="delivery-info">
+                                <p>Mind you that this is only a <strong>moist estimate</strong>.</p>
+                                Scheduled for: 
+                                <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
+                            </div>
+                        </details>
                     </p>
                 {{ end }}
 

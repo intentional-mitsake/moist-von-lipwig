@@ -207,7 +207,14 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	case 4: //match found
 		dd.Show = true
 		dd.IsDelivered = isDelivered
-		dd.Response = fmt.Sprintf("Delivery Status: %t", dd.IsDelivered)
+		var response string
+		if dd.IsDelivered {
+			response = "Delivered"
+		} else {
+			response = "Not Delivered Yet"
+		}
+
+		dd.Response = fmt.Sprintf("Delivery Status: %s", response)
 		dd.Delivery = dt
 		if dd.IsDelivered {
 			//only show the post if its delivered
