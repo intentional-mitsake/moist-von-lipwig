@@ -49,6 +49,7 @@ func CreateRouter(db *sql.DB) http.Handler {
 
 var tmpl = template.Must(template.ParseFiles("templates/index.html"))
 var courierpg = template.Must(template.ParseFiles("templates/von-courier.html"))
+var posted = template.Must(template.ParseFiles("templates/posted.html"))
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	//to allow only get requests
@@ -68,6 +69,11 @@ func (d *DBConfig) dbHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		//need to allow get requests to return back to the main page
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 	//to allow only post requests
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -140,6 +146,8 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger.Info("Post inserted successfully")
+
+	posted.Execute(w, nil)
 }
 
 type data struct {

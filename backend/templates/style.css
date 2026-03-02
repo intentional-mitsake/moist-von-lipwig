@@ -17,12 +17,6 @@ body {
     background-position: center;
     background-attachment: fixed;
     color: var(--text-main);
-    
-    /* Force fit to screen */
-    height: 100vh;
-    overflow: hidden; 
-    display: flex;
-    flex-direction: column;
 }
 
 /* Atmospheric Overlay: Lighting hits the paper center */
