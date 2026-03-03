@@ -18,7 +18,6 @@ You might receive the access notification the very next moment, or ten years mig
 ## Security & Privacy
 Because messages may sit in the "sorting floor" for years, security is paramount. We use a **Zero-Knowledge** approach:
 
-* **Message Encryption:** Content is encrypted using **AES-256-GCM**. We then encode the ciphertext to **Base64** to ensure it remains safe from database encoding errors (UTF-8).
 * **Access Verification:** Waybill Keys are never stored in plain text. They are hashed using **Bcrypt** ($2a$ cost).
 * **Flexible Recipients:** Uses PostgreSQL **JSONB** arrays to store multiple `WaybillID` and `Key` pairs for a single parcel. This way posts can onlly be accessed if you have at least one matching pair.
 
