@@ -135,7 +135,7 @@ func SendEmail(db *sql.DB, postID string, email string) {
 		"Moist Von Lipwig"
 	m := gomail.NewMessage()
 	for _, attachment := range post.Attachments {
-		m.Attach(attachment)
+		m.Attach(attachment) //needs just the file path
 	}
 	for _, image := range post.Images {
 		m.Attach(image)

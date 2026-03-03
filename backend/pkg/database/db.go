@@ -67,6 +67,7 @@ func CreateTables(db *sql.DB) error {
 	}
 	//fmt.Println("this is happening")
 	//fmt.Println(res)
+	logger.Info("Created tables")
 	return nil
 }
 
@@ -154,7 +155,9 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	)
 	if err != nil {
 		logger.Error("Failed to change delivery status", "error", err)
+		return
 	}
+	logger.Info("Delivery status changed", "postIDs", postIDs)
 }
 
 func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.Post, status bool, res int, delivery time.Time, e error) {
