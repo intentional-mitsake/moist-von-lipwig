@@ -127,7 +127,6 @@ func SendEmail(db *sql.DB, postID string, email string) {
 	to := email
 	subject := "Moist Von Lipwig Post"
 	post := database.GetPost(db, postID)
-
 	body := "Your post is here!<br>" +
 		"<p>Sender: " + post.Sender + "</p><br>" +
 		"<p>Message: " + post.Message + "</p><br>" +
@@ -135,6 +134,12 @@ func SendEmail(db *sql.DB, postID string, email string) {
 		"<p>Images: " + strings.Join(post.Images, ", ") + "</p><br>" +
 		"Moist Von Lipwig"
 	m := gomail.NewMessage()
+	for _, attachment := range post.Attachments {
+		m.Attach(attachment)
+	}
+	for _, image := range post.Images {
+		m.Attach(image)
+	}
 	m.SetHeader("From", von)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
