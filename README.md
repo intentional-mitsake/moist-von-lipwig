@@ -1,18 +1,37 @@
-# Moist-Von-Lipwig
-A pet project inspired from the character Moist Von Lipwig from Discworld, resembling the functionality of a time capsule, users will be able to send messages in different formats(text, audio, images .etc) to others and themselves, the catch being that the time of delivery is not known. So, one could send a message and recieve it the very next moment or ten years go by, they forget the message even exists and then only they get it. 
+# 📯 Moist-Von-Lipwig
 
-will SURELY deliver the message
+A pet project inspired by the character Moist von Lipwig from Terry Pratchett's *Discworld*. This system functions as a digital "Time Capsule" or a chaotic post office. Users can send messages in various formats (text, audio, images, etc.) to others or their future selves, with one catch: **the time of delivery is unknown.**
 
-## Motivation
-the idea is to explore what communication looks like when immediacy is removed. instead of sending a message and expecting a followup immediately or in shor term at the very least, this is "send and wait without knowing".
+The Post Office **WILL SURELY** deliver the message. Eventually.
+
+
 
 ---
 
-## Non-goals
-- this is not meant to replace instant messaging
-- this is not meant to be efficient or optimized for speed
-- this is not meant to be predictable
+## Why tho????
+This project explores what communication looks like when **immediacy is removed**. Instead of the modern "instant" culture where we expect a follow-up immediately, this is "send and wait without knowing." 
 
-## uses if there are any
-- users can send messages to their future selves. they won’t know when they will receive them, but delivery is guaranteed
-- users can send messages to other people under the same conditions
+You might receive the access notification the very next moment, or ten years might go by until you've forgotten the message even exists—and then, and only then, does it arrive.
+
+---
+
+## Security & Privacy
+Because messages may sit in the "sorting floor" for years, security is paramount. We use a **Zero-Knowledge** approach:
+
+* **Message Encryption:** Content is encrypted using **AES-256-GCM**. We then encode the ciphertext to **Base64** to ensure it remains safe from database encoding errors (UTF-8).
+* **Access Verification:** Waybill Keys are never stored in plain text. They are hashed using **Bcrypt** ($2a$ cost).
+* **Flexible Recipients:** Uses PostgreSQL **JSONB** arrays to store multiple `WaybillID` and `Key` pairs for a single parcel. This way posts can onlly be accessed if you have at least one matching pair.
+
+---
+
+## Uses 
+* **Letters to a Future Self:** Send advice or memories to your future self. Delivery is guaranteed, but the timing remains a surprise.
+* **Delayed Connection:** Send a message to a friend under the same conditions—a digital "bottle in the ocean."
+---
+
+## Non-Goals
+* **Not a replacement for IM:** This is not for modern digital comm.
+* **Not optimized for speed:** Efficiency is secondary to the "Surety of Delivery."
+* **Not predictable:** The delivery schedule is intentionally opaque.
+
+---
