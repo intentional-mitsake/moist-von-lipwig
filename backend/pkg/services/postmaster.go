@@ -79,8 +79,8 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 			//deliver immediately if delivery date is past
 			go func() { //have to ues local var for ids cuz risks of race condition
 				//can use emailmap cuz it will be the same as isnt changed in loop iterations
-				email := emailMap[p.PostID] //get the email of this postID
-				go SendEmail(email)         //mutliple posts are sent at same schedule so run parallel to reduce load
+				email := emailMap[p.PostID]       //get the email of this postID
+				go SendEmail(db, p.PostID, email) //mutliple posts are sent at same schedule so run parallel to reduce load
 				database.ChangeDeliveryStatus(db, []string{p.PostID})
 			}()
 		} else { //only add to map if delivery date is not past
@@ -104,8 +104,8 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 		currentPostIDs := postIDs
 		c.AddFunc(currentSchedule, func() {
 			for _, postID := range currentPostIDs {
-				email := emailMap[postID] //get the email of this postID
-				go SendEmail(email)       //mutliple posts are sent at same schedule so run parallel to reduce load
+				email := emailMap[postID]       //get the email of this postID
+				go SendEmail(db, postID, email) //mutliple posts are sent at same schedule so run parallel to reduce load
 			}
 			//doesnt need to be called for each post as they are all scheduled for the same date
 			database.ChangeDeliveryStatus(db, currentPostIDs) //this way even delivery dates we missed previously will be marked as delivered
@@ -120,13 +120,20 @@ func isDeliveryPast(schedule time.Time) bool {
 	//false if schedule is after cuurent day
 }
 
-func SendEmail(email string) {
+func SendEmail(db *sql.DB, postID string, email string) {
 	//fmt.Println(email)
 	von := os.Getenv("VON")
 	pass := os.Getenv("PASS")
 	to := email
 	subject := "Moist Von Lipwig Post"
-	body := "Your post can be accessed now! \n\nMoist Von Lipwig"
+	post := database.GetPost(db, postID)
+
+	body := "Your post is here!<br>" +
+		"<p>Sender: " + post.Sender + "</p><br>" +
+		"<p>Message: " + post.Message + "</p><br>" +
+		"<p>Attachments: " + strings.Join(post.Attachments, ", ") + "</p><br>" +
+		"<p>Images: " + strings.Join(post.Images, ", ") + "</p><br>" +
+		"Moist Von Lipwig"
 	m := gomail.NewMessage()
 	m.SetHeader("From", von)
 	m.SetHeader("To", to)

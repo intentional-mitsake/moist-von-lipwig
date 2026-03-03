@@ -34,10 +34,11 @@ func main() {
 	c := services.CronJobs(db)
 	//to make sure everything is fine even if the server was down
 	//add an immediate db fetch adn schdeule here
-	schedule := services.CheckDeliveryDates(db)
-	services.ScheduleDelivery(c, db, schedule)
+
 	defer c.Stop() //so that the cron jobs dont run forever and stop if the server crashes
 
+	immediateCheck := services.CheckDeliveryDates(db)
+	services.ScheduleDelivery(c, db, immediateCheck)
 	//listenandserve only returns error, thus unless the server crashes or we shut it, this wont be
 	//displayed if its after the func
 	logger.Info("Server starting", "address", addr)

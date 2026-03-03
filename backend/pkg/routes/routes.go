@@ -93,6 +93,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	waybilIDs := r.Form["waybill-ids"] //map of all the access ids cux its an array
 	keys := r.Form["key"]              //map of all the keys cux its an array
+	sender := r.FormValue("sender")
 	//files := r.MultipartForm.File["files"] //map of all the files cux its an array
 	//imgs := r.MultipartForm.File["images"] //map of all the images cux its an array
 	logger.Info("Post request received")
@@ -113,6 +114,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println(uploadsPath)
 	new_post := models.Post{
 		PostID:      uuid.New().String(),
+		Sender:      sender,
 		AccessPairs: []config.AccessPair{},
 		Email:       email,
 		Message:     message,
@@ -179,8 +181,8 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	key := r.FormValue("key")
 	logger.Info("Waybill request received", "waybill", waybill, "key", key)
 	ap := config.AccessPair{
-		WaybillID: waybill,
 		Key:       key,
+		WaybillID: waybill,
 	}
 	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
 	if err != nil {
@@ -221,6 +223,9 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 			dd.Post = post
 		}
 		logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
+	case 5:
+		dd.Show = false
+		dd.Response = "Failed to check delivery status"
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = courierpg.Execute(w, dd)

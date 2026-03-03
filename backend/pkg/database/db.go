@@ -50,6 +50,7 @@ func CreateTables(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS posts (
 			post_id TEXT PRIMARY KEY,
+			sender TEXT,
 			access_pairs JSONB,
 			email TEXT,
 			message TEXT,
@@ -79,9 +80,10 @@ func InsertPost(db *sql.DB, post *models.Post) error {
 		return err
 	}
 	_, err = db.Exec( //banger of an error-->err was declared above, so if u use := here it gives error
-		`INSERT INTO posts (post_id, access_pairs, email, message, attachments, images, created_at, delivery, is_delivered)
-	    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
+		`INSERT INTO posts (post_id, sender, access_pairs, email, message, attachments, images, created_at, delivery, is_delivered)
+	    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
 		post.PostID,
+		post.Sender,
 		jsonB,
 		post.Email,
 		post.Message,
@@ -111,6 +113,7 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 		logger.Error("Failed to get delivery dates", "error", err)
 		return nil, err
 	}
+	//logger.Info("HERE")
 	var delivery []config.Delivery
 	defer rows.Close() //closing the rows after we are done
 	for rows.Next() {  //preps next row to rea
@@ -118,6 +121,7 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 		var date time.Time
 		var isDelivered bool
 		err := rows.Scan(&id, &date, &isDelivered, &email)
+		//logger.Info("Query", id, date, isDelivered, email)
 		if err != nil {
 			logger.Error("Error while scanning the rows", "error", err)
 			return nil, err
@@ -158,12 +162,17 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
     SELECT post_id, delivery, is_delivered, pair->>'Key'
     FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
     WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
+	logger.Info("Rows:", rows)
 	if err != nil {
+
 		logger.Error("Database query failed", "error", err)
-		return models.Post{}, false, 1, time.Time{}, err
+		return models.Post{}, false, 5, time.Time{}, err
 	}
 	defer rows.Close()
+	found := false
 	for rows.Next() {
+		//if theres no error AND there is a row that means at least one match
+		found = true
 		var tempDelivery time.Time
 		var tempIsDelivered bool
 		var tempHashedPassword string
@@ -179,10 +188,11 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
 			// match found
 			var post models.Post
 			err = db.QueryRow(`
-			SELECT post_id, email, message, attachments, images, created_at, delivery, is_delivered
+			SELECT post_id, sender, email, message, attachments, images, created_at, delivery, is_delivered
 			FROM posts
 			WHERE post_id = $1`, postID).Scan(
 				&post.PostID,
+				&post.Sender,
 				&post.Email,
 				&post.Message,
 				pq.Array(&post.Attachments),
@@ -198,7 +208,33 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
 			return post, tempIsDelivered, 4, tempDelivery, nil
 		}
 	}
+	if !found {
+		logger.Error("Waybill not found", "error", err)
+		return models.Post{}, false, 1, time.Time{}, err
+	}
 
 	//no match
 	return models.Post{}, false, 3, time.Time{}, fmt.Errorf("invalid waybill or key")
+}
+
+func GetPost(db *sql.DB, postID string) (Post models.Post) {
+	err := db.QueryRow(`
+		SELECT post_id, sender, email, message, attachments, images, created_at, delivery, is_delivered
+		FROM posts
+		WHERE post_id = $1`, postID).Scan(
+		&Post.PostID,
+		&Post.Sender,
+		&Post.Email,
+		&Post.Message,
+		pq.Array(&Post.Attachments),
+		pq.Array(&Post.Images),
+		&Post.CreatedAt,
+		&Post.Delivery,
+		&Post.IsDelivered,
+	)
+	if err != nil {
+		logger.Error("Database query failed", "error", err)
+		return models.Post{}
+	}
+	return Post
 }
