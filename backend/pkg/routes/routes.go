@@ -127,7 +127,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	for i, _ := range waybilIDs {
 		hk, err := services.HashIns(keys[i])
 		if err != nil {
-			http.Error(w, "Failed to hash key", http.StatusBadRequest)
+			http.Error(w, "Failed to hash key", http.StatusInternalServerError)
 		}
 		new_post.AccessPairs = append(new_post.AccessPairs, config.AccessPair{
 			WaybillID: waybilIDs[i],
@@ -186,23 +186,23 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
 	if err != nil {
-		//http.Error(w, "Failed to check delivery status", http.StatusBadRequest)
+		//http.Error(w, "Failed to check delivery status", http.StatusInternalServerError)
 		logger.Error("Failed to check delivery status", "error", err)
 	}
 	var dd data
 	switch res {
 	case 1: //waybill not found
-		//http.Error(w, "Waybill not found", http.StatusBadRequest)
+		//http.Error(w, "Waybill not found", http.StatusNotFound)
 		//logger.Info("Waybill not found")
 		dd.Show = false
 		dd.Response = "Waybill not found"
 	case 2: //failed to check delivery status
-		//http.Error(w, "Failed to check delivery status", http.StatusBadRequest)
+		//http.Error(w, "Failed to check delivery status", http.StatusInternalServerError)
 		//logger.Error("Failed to check delivery status", "error", err)
 		dd.Show = false
 		dd.Response = "Failed to check delivery status"
 	case 3: //key not matching
-		//http.Error(w, "Key not matching", http.StatusBadRequest)
+		//http.Error(w, "Key not matching", http.StatusUnauthorized)
 		//logger.Error("Key not matching", "error", err)
 		dd.Show = false
 		dd.Response = "Key not matching"
@@ -231,5 +231,6 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	err = courierpg.Execute(w, dd)
 	if err != nil {
 		logger.Error("Template loading failed", "error", err)
+		http.Error(w, "Template loading failed", http.StatusInternalServerError)
 	}
 }
