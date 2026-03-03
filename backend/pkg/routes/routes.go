@@ -144,7 +144,7 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	)
 	err = database.InsertPost(d.DBObj, &new_post)
 	if err != nil {
-		http.Error(w, "Failed to insert post", http.StatusBadRequest)
+		http.Error(w, "Failed to insert post", http.StatusInternalServerError)
 		return
 	}
 	logger.Info("Post inserted successfully")
