@@ -10,116 +10,150 @@
 
     <div class="card">
         <div class="content">
-
-            {{ if .Show }}
-
-                <img src="/static/assets/delivery.jpg" class="header-img" alt="Delivery Header">
-                <div class="status-badge granted">ACCESS GRANTED</div>
-                <p class="response-text">{{ .Response }}</p>
-
-                {{ if .IsDelivered }}
-                    <div class="stamp-container" style="position: relative; text-align: center; margin-bottom: 30px;">
-                        <img src="/static/assets/stampPS.jpg" 
-                             style="width: 140px; height: auto; transform: rotate(-12deg); opacity: 0.4;" 
-                             alt="Delivered Stamp">
-                        <p class="date" style="font-family: 'Georgia', serif; margin-top: -80px; color: var(--accent-green); font-weight: bold;">
-                            Delivered on: {{ .Delivery.Format "January 02, 2006" }}
-                        </p>
-                    </div>
-
-                    <div class="letter-body" style="border-top: 2px dashed #d7ccc8; padding-top: 20px;">
-                        <h2 style="font-family: 'Georgia', serif; font-size: 1.1rem; text-transform: uppercase;">Official Correspondence</h2>
-                        
-                       <p><strong>From:</strong> {{ .Post.Sender }}</p>
-                        
-                        <div class="message-text" style="background: #fffcf5; padding: 20px; border: 1px solid #e0d5c1; font-style: italic; line-height: 1.6; margin: 20px 0; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);">
-                            "{{ .Post.Message }}"
-                        </div>
-
-                        <div class="attachments-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; text-align: center;">
-                            {{ if or .Post.Images .Post.Attachments }}
-                                <div>
-                                    <label style="font-size: 0.7rem; text-align: center;">Images & Documents have been sent to: {{ .Post.Email }}</label>
-                                </div>
-                            {{ end }}
-                        </div>
-                    </div>
-                {{ else }}
-                    <img src="/static/assets/horse.jpg" style="width: auto; height: 150px; object-fit: contain; border: 1px solid #333; margin-bottom: 20px; max-width: 100%;" alt="Pending Stamp">
-                    <p class="date">
-                        <strong>Post Master Lipwig is on the way on his horse!</strong><br>
-                        <details class="delivery-reveal">
-                         <summary>Do you want to reveal the approximate delivery date?</summary>
-                            <div class="delivery-info">
-                                <p>Mind you that this is only a <strong>moist estimate</strong>.</p>
-                                Scheduled for: 
-                                <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
-                            </div>
-                        </details>
-                    </p>
-                {{ end }}
-
-            {{ else }}
-
-                {{ if eq .Response "Waybill not found" }}
-
-                    <img src="/static/assets/notFound.jpg" class="header-img" alt="Not Found">
-                    <div class="status-badge denied">ACCESS DENIED</div>
-                    <p class="response-text error-text">{{ .Response }}</p>
-
-                    <div class="stamp-wrapper">
-                        <small class="overlap-text">
-                            Even the Librarian couldn’t find this waybill
-                        </small>
-                        <img src="/static/assets/stampAM.jpg"
-                             class="stamp-bg"
-                             alt="Not Found Stamp">
-                    </div>
-
-                    <p class="date hint-text">
-                        Maybe you should check the waybill number again?
-                    </p>
-
-                {{ else if eq .Response "Failed to check delivery status" }}
-
-                    <img src="/static/assets/failed.jpg" class="header-img" alt="System Failure">
-                    <div class="status-badge denied">ACCESS DENIED</div>
-                    <p class="response-text error-text">{{ .Response }}</p>
-
-                    <div class="stamp-wrapper">
-                        <small class="overlap-text">
-                            Post Master Lipwig had a bad day.
-                        </small>
-                        <img src="/static/assets/stampPS.jpg"
-                             class="stamp-bg"
-                             alt="Access Failed">
-                    </div>
-
-                    <p class="date hint-text">
-                        Post Master Lipwig would probably know.
-                    </p>
-
-                {{ else }}
-
+            {{ if .Choices }}
+                <div class="vimes-investigation-wrapper">
                     <img src="/static/assets/vimes.jpg" class="header-img" alt="Invalid Access">
                     <div class="status-badge denied">ACCESS DENIED</div>
                     <p class="response-text error-text">{{ .Response }}</p>
-
-                    <div class="stamp-wrapper">
-                        <small class="overlap-text">
-                            Are you perhaps being smart?
-                        </small>
-                        <img src="/static/assets/citywatch.jpg"
-                             class="stamp-bg"
-                             alt="Invalid Key">
+                    <div class="choices-ledger" style="margin: 20px 0; border: 1px dashed #666; padding: 10px;">
+                        {{ range .Choices }}
+                            <div class="choice-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                                <p style="margin: 0;"><strong>Shipment found from:</strong> {{ .CreatedAt.Format "Jan 02, 2006" }}</p> <!-- . inside a range is the curent item of the range -->
+                                <!-- id= {{ .PostID }}    even a space after id= causes an error here-->
+                                <a href="/access-id?id={{ .PostID }}" class="btn-select">
+                                    This is my shipment
+                                </a>
+                            </div>
+                        {{ end }}
                     </div>
 
-                    <p class="date hint-text">
-                        Lord Commander Vimes knows what to do with smart folks.<br>
-                        Please contact the sender for the correct key.
-                    </p>
+                    <div class="stamp-wrapper">
+                        <small class="overlap-text">This seems suspicious. I dont believe in coincidences.</small>
+                        <img src="/static/assets/citywatch.jpg" class="stamp-bg" alt="Multiple Pairs">
+                    </div>
 
-                {{ end }}
+                    <p class="date hint-text">Lord Commander Vimes has dealt with coicidences before.<br></p>
+                </div>
+            {{ else }}
+               {{ if .Show }}
+
+                   <img src="/static/assets/delivery.jpg" class="header-img" alt="Delivery Header">
+                   <div class="status-badge granted">ACCESS GRANTED</div>
+                   <p class="response-text">{{ .Response }}</p>
+
+                   {{ if .IsDelivered }}
+                       <div class="stamp-container" style="position: relative; text-align: center; margin-bottom: 30px;">
+                           <img src="/static/assets/stampPS.jpg" 
+                                style="width: 140px; height: auto; transform: rotate(-12deg); opacity: 0.4;" 
+                                alt="Delivered Stamp">
+                           <p class="date" style="font-family: 'Georgia', serif; margin-top: -80px; color: var(--accent-green); font-weight: bold;">
+                               Delivered on: {{ .Delivery.Format "January 02, 2006" }}
+                           </p>
+                       </div>
+
+                       <div class="letter-body" style="border-top: 2px dashed #d7ccc8; padding-top: 20px;">
+                           <h2 style="font-family: 'Georgia', serif; font-size: 1.1rem; text-transform: uppercase;">Official Correspondence</h2>
+                          {{ if .Post.Message }} 
+                          <p><strong>From:</strong> {{ .Post.Sender }}</p>
+                        
+                           <div class="message-text" style="background: #fffcf5; padding: 20px; border: 1px solid #e0d5c1; font-style: italic; line-height: 1.6; margin: 20px 0; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);">
+                              "{{ .Post.Message }}"
+                           </div>
+                           <div class="attachments-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; text-align: center;">
+                               {{ if or .Post.Images .Post.Attachments }}
+                                   <div>
+                                       <label style="font-size: 0.7rem; text-align: center;">Images & Documents have been sent to: {{ .Post.Email }}</label>
+                                   </div>
+                               {{ end }}
+                           </div>
+                           {{ else }}
+                           <div class="message-text" style="background: #fffcf5; padding: 20px; border: 1px solid #e0d5c1; font-style: italic; line-height: 1.6; margin: 20px 0; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);">
+                              "Due to access pair collision the message cannot be shown here. Access it from the email."
+                           </div>
+                                   <div>
+                                       <label style="font-size: 0.7rem; text-align: center;">Images & Documents have been sent to the Email as well</label>
+                                   </div>
+                           </div>
+                           {{ end }}
+                       </div>
+                   {{ else }}
+                       <img src="/static/assets/horse.jpg" style="width: auto; height: 150px; object-fit: contain; border: 1px solid #333; margin-bottom: 20px; max-width: 100%;" alt="Pending Stamp">
+                       <p class="date">
+                           <strong>Post Master Lipwig is on the way on his horse!</strong><br>
+                           <details class="delivery-reveal">
+                            <summary>Do you want to reveal the approximate delivery date?</summary>
+                               <div class="delivery-info">
+                                   <p>Mind you that this is only a <strong>moist estimate</strong>.</p>
+                                   Scheduled for: 
+                                   <strong>{{ .Delivery.Format "January 02, 2006" }}</strong>
+                               </div>
+                           </details>
+                       </p>
+                   {{ end }}
+
+               {{ else }}
+
+                   {{ if eq .Response "Waybill not found" }}
+
+                       <img src="/static/assets/notFound.jpg" class="header-img" alt="Not Found">
+                       <div class="status-badge denied">ACCESS DENIED</div>
+                       <p class="response-text error-text">{{ .Response }}</p>
+
+                       <div class="stamp-wrapper">
+                           <small class="overlap-text">
+                               Even the Librarian couldn’t find this waybill
+                           </small>
+                           <img src="/static/assets/stampAM.jpg"
+                                class="stamp-bg"
+                                alt="Not Found Stamp">
+                       </div>
+
+                       <p class="date hint-text">
+                           Maybe you should check the waybill number again?
+                       </p>
+
+                   {{ else if eq .Response "Failed to check delivery status" }}
+
+                       <img src="/static/assets/failed.jpg" class="header-img" alt="System Failure">
+                       <div class="status-badge denied">ACCESS DENIED</div>
+                       <p class="response-text error-text">{{ .Response }}</p>
+
+                       <div class="stamp-wrapper">
+                           <small class="overlap-text">
+                               Post Master Lipwig had a bad day.
+                           </small>
+                           <img src="/static/assets/stampPS.jpg"
+                                class="stamp-bg"
+                                alt="Access Failed">
+                       </div>
+
+                       <p class="date hint-text">
+                           Post Master Lipwig would probably know.
+                       </p>
+
+                   {{ else }}
+
+                       <img src="/static/assets/vimes.jpg" class="header-img" alt="Invalid Access">
+                       <div class="status-badge denied">ACCESS DENIED</div>
+                       <p class="response-text error-text">{{ .Response }}</p>
+
+                       <div class="stamp-wrapper">
+                           <small class="overlap-text">
+                               Are you perhaps being smart?
+                           </small>
+                           <img src="/static/assets/citywatch.jpg"
+                                class="stamp-bg"
+                                alt="Invalid Key">
+                       </div>
+
+                       <p class="date hint-text">
+                           Lord Commander Vimes knows what to do with smart folks.<br>
+                           Please contact the sender for the correct key.
+                       </p>
+
+                   {{ end }}
+
+               {{ end }}
 
             {{ end }}
 

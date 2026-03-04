@@ -24,6 +24,11 @@ type AccessPair struct {
 	Key       string
 }
 
+type Choices struct {
+	CreatedAt time.Time
+	PostID    string
+}
+
 func LoadDBConfig() *Config {
 	godotenv.Load(".env")
 	source := os.Getenv("DBCONN")

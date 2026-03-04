@@ -18,6 +18,15 @@ import (
 
 var logger = lg.CreateLogger()
 
+type Data struct {
+	Show        bool
+	IsDelivered bool
+	Response    string
+	Delivery    time.Time
+	Post        models.Post
+	Choices     []config.Choices
+}
+
 // every route handler that needs to access the database will be a method of htis struct
 type DBConfig struct {
 	DBObj *sql.DB
@@ -46,6 +55,7 @@ func CreateRouter(db *sql.DB) http.Handler {
 	mux.HandleFunc("/db", dbCnfg.dbHandler)
 	mux.HandleFunc("/post-letter", dbCnfg.postHandler)
 	mux.HandleFunc("/access-post", dbCnfg.accessHandler)
+	mux.HandleFunc("/access-id", dbCnfg.idHandler)
 	return mux
 }
 
@@ -153,14 +163,6 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	posted.Execute(w, postID)
 }
 
-type data struct {
-	Show        bool
-	IsDelivered bool
-	Response    string
-	Delivery    time.Time
-	Post        models.Post
-}
-
 func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		//need to allow get requests to return back to the main page
@@ -191,12 +193,12 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		Key:       key,
 		WaybillID: waybill,
 	}
-	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
+	posts, res, err := database.CheckDeliveryStatus(d.DBObj, ap)
 	if err != nil {
 		//http.Error(w, "Failed to check delivery status", http.StatusInternalServerError)
 		logger.Error("Failed to check delivery status", "error", err)
 	}
-	var dd data
+	var dd Data //couldnt place in config due to circular dependency(models and config)
 	switch res {
 	case 1: //waybill not found
 		//http.Error(w, "Waybill not found", http.StatusNotFound)
@@ -217,23 +219,37 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		dd.Response = "Key not matching"
 		w.WriteHeader(http.StatusUnauthorized)
 	case 4: //match found
-		dd.Show = true
-		dd.IsDelivered = isDelivered
-		var response string
-		if dd.IsDelivered {
-			response = "Delivered"
-		} else {
-			response = "Not Delivered Yet"
+		if len(posts) == 1 { //multiple access pairs with same waybill id and keys(highly unlikely but still i ran into it)
+			dd.Show = true
+			dd.IsDelivered = posts[0].IsDelivered
+			var response string
+			if dd.IsDelivered {
+				response = "Delivered"
+			} else {
+				response = "Not Delivered Yet"
+			}
+			dd.Response = fmt.Sprintf("Delivery Status: %s", response)
+			dd.Delivery = posts[0].Delivery
+			if dd.IsDelivered {
+				//only show the post if its delivered
+				dd.Post = posts[0]
+			}
+			logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
+			w.WriteHeader(http.StatusFound) //only give found if only one pair found
+		} else { //multiples
+			dd.Choices = []config.Choices{}
+			for _, post := range posts {
+				//if we put the post itself in choices, somone can access a post not belonging to them
+				//so we only send the created at dates to the html
+				//user can choose which one is theirs
+				dd.Choices = append(dd.Choices, config.Choices{
+					CreatedAt: post.CreatedAt,
+					PostID:    post.PostID})
+			}
+			dd.Response = "Multiple Access Pairs Found"
+			logger.Info("Multiple Pairs Found: ", dd.Choices)
+			w.WriteHeader(http.StatusMultipleChoices)
 		}
-
-		dd.Response = fmt.Sprintf("Delivery Status: %s", response)
-		dd.Delivery = dt
-		if dd.IsDelivered {
-			//only show the post if its delivered
-			dd.Post = post
-		}
-		logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
-		w.WriteHeader(http.StatusFound)
 	case 5:
 		dd.Show = false
 		dd.Response = "Failed to check delivery status"
@@ -241,6 +257,49 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = courierpg.Execute(w, dd)
+	if err != nil {
+		logger.Error("Template loading failed", "error", err)
+		http.Error(w, "Template loading failed", http.StatusInternalServerError)
+	}
+}
+
+func (d *DBConfig) idHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		//this is only get requests
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	postid := r.URL.Query().Get("id")
+	logger.Info("Post ID request received", "postid", postid)
+	post := database.GetPost(d.DBObj, postid)
+	var dd Data
+	dd.Show = true
+	dd.IsDelivered = post.IsDelivered
+	var response string
+	if dd.IsDelivered {
+		response = "Delivered"
+	} else {
+		response = "Not Delivered Yet"
+	}
+	dd.Response = fmt.Sprintf("Delivery Status: %s", response)
+	dd.Delivery = post.Delivery
+	//if dd.IsDelivered {
+	//only show the post if its delivered
+	//dd.Post = post
+	//}
+	//if there were multi access pairs with same waybill id and keys,
+	//a risk is that one guy might be able to access the post not belonging to them
+	//so in such cases we only show the created at dates,delivery date and delivery status
+	//this way they know when it wiil reach them without them being able to access the post info of others
+	//will block the message display on courier page for such cases, users can get theri deli dates from created date
+	//another approach i thouught of was asking users the POST ID if this happende and only if this happend
+	//but again that a unique number and it might be tedious to save it somewehr and find it again for this
+	//so this is the one i prefer, if u have same pair as anohte user, u two will be able to see each others delivery data but nothig els
+	//the postid ask approach has risk of lockngi the user out if they lost it
+	logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err := courierpg.Execute(w, dd)
 	if err != nil {
 		logger.Error("Template loading failed", "error", err)
 		http.Error(w, "Template loading failed", http.StatusInternalServerError)

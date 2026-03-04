@@ -160,19 +160,20 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	logger.Info("Delivery status changed", "postIDs", postIDs)
 }
 
-func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.Post, status bool, res int, delivery time.Time, e error) {
+func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []models.Post, res int, e error) {
 	rows, err := db.Query(`
     SELECT post_id, delivery, is_delivered, pair->>'Key'
     FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
     WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
-	logger.Info("Rows:", rows)
+	//logger.Info("Rows:", rows)
 	if err != nil {
 
 		logger.Error("Database query failed", "error", err)
-		return models.Post{}, false, 5, time.Time{}, err
+		return []models.Post{}, 5, err
 	}
 	defer rows.Close()
 	found := false
+	var posts []models.Post
 	for rows.Next() {
 		//if theres no error AND there is a row that means at least one match
 		found = true
@@ -188,7 +189,7 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
 		logger.Info("Checking pair", "postID", postID, "hash", tempHashedPassword)
 		err = bcrypt.CompareHashAndPassword([]byte(tempHashedPassword), []byte(accesspair.Key))
 		if err == nil {
-			// match found
+			// match found --> no error from query, at least one row, and no error from bcrypt(key matches)
 			var post models.Post
 			err = db.QueryRow(`
 			SELECT post_id, sender, email, message, attachments, images, created_at, delivery, is_delivered
@@ -204,20 +205,29 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.
 				&post.Delivery,
 				&post.IsDelivered,
 			)
+			posts = append(posts, post)
 			if err != nil {
 				logger.Error("Database query failed", "error", err)
-				return models.Post{}, false, 2, time.Time{}, err
+				return []models.Post{}, 2, err
 			}
-			return post, tempIsDelivered, 4, tempDelivery, nil
+			//return post, tempIsDelivered, 4, tempDelivery, nil
+		} else if err == bcrypt.ErrMismatchedHashAndPassword {
+			return []models.Post{}, 3, fmt.Errorf("invalid waybill or key")
 		}
+	}
+	if found {
+		//found is true means it found at least one row
+		//so no ened to chcek for nil posts in routes.go, but better to have one so logged it here
+		logger.Info("Posts: ", posts)
+		return posts, 4, nil
 	}
 	if !found {
 		logger.Error("Waybill not found", "error", err)
-		return models.Post{}, false, 1, time.Time{}, err
+		return []models.Post{}, 1, err
 	}
 
 	//no match
-	return models.Post{}, false, 3, time.Time{}, fmt.Errorf("invalid waybill or key")
+	return []models.Post{}, 3, fmt.Errorf("invalid waybill or key")
 }
 
 func GetPost(db *sql.DB, postID string) (Post models.Post) {
