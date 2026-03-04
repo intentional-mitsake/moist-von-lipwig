@@ -7,6 +7,7 @@ import (
 	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/models"
 	"os"
+	"sync"
 	"time"
 
 	"encoding/json"
@@ -162,7 +163,7 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 
 func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []models.Post, res int, e error) {
 	rows, err := db.Query(`
-    SELECT post_id, delivery, is_delivered, pair->>'Key'
+    SELECT post_id, sender, email, message, attachments, images, created_at, delivery, is_delivered, pair->>'Key'
     FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
     WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
 	//logger.Info("Rows:", rows)
@@ -174,60 +175,56 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []model
 	defer rows.Close()
 	found := false
 	var posts []models.Post
+	var tempHashedPassword string
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 	for rows.Next() {
 		//if theres no error AND there is a row that means at least one match
 		found = true
-		var tempDelivery time.Time
-		var tempIsDelivered bool
-		var tempHashedPassword string
-		var postID string
-
-		if err := rows.Scan(&postID, &tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
+		var post models.Post
+		if err := rows.Scan(
+			&post.PostID,
+			&post.Sender,
+			&post.Email,
+			&post.Message,
+			pq.Array(&post.Attachments),
+			pq.Array(&post.Images),
+			&post.CreatedAt,
+			&post.Delivery,
+			&post.IsDelivered,
+			&tempHashedPassword,
+		); err != nil {
 			continue
 		}
-
-		logger.Info("Checking pair", "postID", postID, "hash", tempHashedPassword)
-		err = bcrypt.CompareHashAndPassword([]byte(tempHashedPassword), []byte(accesspair.Key))
-		if err == nil {
-			// match found --> no error from query, at least one row, and no error from bcrypt(key matches)
-			var post models.Post
-			err = db.QueryRow(`
-			SELECT post_id, sender, email, message, attachments, images, created_at, delivery, is_delivered
-			FROM posts
-			WHERE post_id = $1`, postID).Scan(
-				&post.PostID,
-				&post.Sender,
-				&post.Email,
-				&post.Message,
-				pq.Array(&post.Attachments),
-				pq.Array(&post.Images),
-				&post.CreatedAt,
-				&post.Delivery,
-				&post.IsDelivered,
-			)
-			posts = append(posts, post)
-			if err != nil {
-				logger.Error("Database query failed", "error", err)
-				return []models.Post{}, 2, err
+		logger.Info("Checking pair", "postID", post.PostID, "hash", tempHashedPassword)
+		wg.Add(1) // incr wg counter
+		go func(tempHashedPass string, key string) {
+			defer wg.Done() //decr wg counter by 1
+			err = bcrypt.CompareHashAndPassword([]byte(tempHashedPass), []byte(key))
+			if err == nil {
+				mu.Lock()
+				// match found --> no error from query, at least one row, and no error from bcrypt(key matches)-->append
+				posts = append(posts, post)
+				//return post, tempIsDelivered, 4, tempDelivery, nil
+				mu.Unlock()
 			}
-			//return post, tempIsDelivered, 4, tempDelivery, nil
-		} else if err == bcrypt.ErrMismatchedHashAndPassword {
-			return []models.Post{}, 3, fmt.Errorf("invalid waybill or key")
-		}
+		}(tempHashedPassword, accesspair.Key)
 	}
-	if found {
-		//found is true means it found at least one row
-		//so no ened to chcek for nil posts in routes.go, but better to have one so logged it here
-		logger.Info("Posts: ", posts)
-		return posts, 4, nil
-	}
+	wg.Wait() //blocks this func until wg counter is 0
 	if !found {
 		logger.Error("Waybill not found", "error", err)
 		return []models.Post{}, 1, err
 	}
-
-	//no match
-	return []models.Post{}, 3, fmt.Errorf("invalid waybill or key")
+	if found {
+		if len(posts) == 0 { //found rows but key did not matach so did not append to posts
+			return []models.Post{}, 3, fmt.Errorf("invalid waybill or key")
+		}
+	}
+	//if we get to this point-->if !found was false so we found at least one row
+	//found is true means it found at least one row
+	//so no ened to chcek for nil posts in routes.go, but better to have one so logged it here
+	logger.Info("Posts: ", posts)
+	return posts, 4, nil
 }
 
 func GetPost(db *sql.DB, postID string) (Post models.Post) {
