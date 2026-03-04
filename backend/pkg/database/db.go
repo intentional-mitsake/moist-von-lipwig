@@ -67,7 +67,7 @@ func CreateTables(db *sql.DB) error {
 		return err
 	}
 	_, err = db.Exec(`
-	CREATE INDEX apIndx ON posts USING GIN (access_pairs);
+    CREATE INDEX IF NOT EXISTS apIndx ON posts USING GIN (access_pairs);
 	`)
 	if err != nil {
 		logger.Error("Failed to created inexes", "error", err)
@@ -181,6 +181,8 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []model
 	//still theres a feel of slowness so tohugh indexing would help
 	//realiseing now that unless i have to do a seq search of 10000000 rows, diff isnt much noticable from wihtout indexng
 	//will keep it still
+	//all in all its pretty fast now, go routines are reducing cpu time consumed by bcrypt and for loop for each row that matches
+	//indexing is removing the need for sequential seach so much faster db access
 	//logger.Info("Rows:", rows)
 	if err != nil {
 
@@ -215,6 +217,8 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []model
 		wg.Add(1) // incr wg counter
 		go func(tempHashedPass string, key string) {
 			defer wg.Done() //decr wg counter by 1
+			//bcrypt compare itself costs a lot of cpu time so go routines needed to reduce that
+			//the mre the salt the more cpu time it takes, but also takes longer for hackers to try brute force as compareing passwoirds takes more time
 			err = bcrypt.CompareHashAndPassword([]byte(tempHashedPass), []byte(key))
 			if err == nil {
 				mu.Lock()
