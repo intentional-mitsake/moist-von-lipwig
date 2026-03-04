@@ -148,8 +148,9 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger.Info("Post inserted successfully")
-
-	posted.Execute(w, nil)
+	postID := new_post.PostID
+	w.WriteHeader(http.StatusCreated)
+	posted.Execute(w, postID)
 }
 
 type data struct {
@@ -184,7 +185,8 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		Key:       key,
 		WaybillID: waybill,
 	}
-	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
+	postID := r.FormValue("post-id")
+	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap, postID)
 	if err != nil {
 		//http.Error(w, "Failed to check delivery status", http.StatusInternalServerError)
 		logger.Error("Failed to check delivery status", "error", err)
@@ -196,16 +198,19 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		//logger.Info("Waybill not found")
 		dd.Show = false
 		dd.Response = "Waybill not found"
+		w.WriteHeader(http.StatusNotFound)
 	case 2: //failed to check delivery status
 		//http.Error(w, "Failed to check delivery status", http.StatusInternalServerError)
 		//logger.Error("Failed to check delivery status", "error", err)
 		dd.Show = false
 		dd.Response = "Failed to check delivery status"
+		w.WriteHeader(http.StatusInternalServerError)
 	case 3: //key not matching
 		//http.Error(w, "Key not matching", http.StatusUnauthorized)
 		//logger.Error("Key not matching", "error", err)
 		dd.Show = false
 		dd.Response = "Key not matching"
+		w.WriteHeader(http.StatusUnauthorized)
 	case 4: //match found
 		dd.Show = true
 		dd.IsDelivered = isDelivered
@@ -223,9 +228,11 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 			dd.Post = post
 		}
 		logger.Info("Delivery Status: ", dd.IsDelivered, "Delivery: ", dd.Delivery)
+		w.WriteHeader(http.StatusFound)
 	case 5:
 		dd.Show = false
 		dd.Response = "Failed to check delivery status"
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = courierpg.Execute(w, dd)
