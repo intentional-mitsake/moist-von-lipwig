@@ -18,7 +18,6 @@
 
         <!-- Search -->
         <form action="/access-post" method="POST" class="search-form">
-            <input type="text" name="post-id" placeholder="Post ID" required>
             <input type="text" name="waybill" placeholder="Waybill ID" required>
             <input type="password" name="key" placeholder="Courier Key" required>
             <button type="submit" class="LocatePost">Locate Post</button>
@@ -57,11 +56,11 @@
 
     <div class="form-group full-width">
         <label>Message for delivery(Which is guranteed by the Post Master Lipwig....someday probably):</label>
-        <textarea name="message" rows="5" placeholder="Write your letter here..." required></textarea>
+        <textarea name="message" rows="5" placeholder="Write your letter here.....(this can be seen on the accces page when the post is delivered.)" required></textarea>
     </div>
 
     <div class="form-group">
-        <label>Images (Post Master Lipwig respects everyones privacy):</label>
+        <label>Images (Post Master Lipwig respects everyones privacy:</label>
         <input type="file" name="images" accept="image/*" multiple>
     </div>
 
@@ -69,7 +68,7 @@
         <label>Attachments (Well... cant really say, he's new and all.):</label>
         <input type="file" name="attachments" multiple>
     </div>
-
+    <p>*Images and Attachments will be sent with the Email only!</p>
     <button type="submit" class="stamp-btn">Seal and Send Post</button>
 </form>
             </div>

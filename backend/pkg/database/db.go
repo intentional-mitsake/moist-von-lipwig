@@ -160,12 +160,11 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 	logger.Info("Delivery status changed", "postIDs", postIDs)
 }
 
-func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair, postID string) (post models.Post, status bool, res int, delivery time.Time, e error) {
+func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post models.Post, status bool, res int, delivery time.Time, e error) {
 	rows, err := db.Query(`
-    SELECT delivery, is_delivered, pair->>'Key'
+    SELECT post_id, delivery, is_delivered, pair->>'Key'
     FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
-    WHERE pair->>'WaybillID' = $1 
-	AND post_id = $2`, accesspair.WaybillID, postID)
+    WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
 	logger.Info("Rows:", rows)
 	if err != nil {
 
@@ -180,8 +179,9 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair, postID string
 		var tempDelivery time.Time
 		var tempIsDelivered bool
 		var tempHashedPassword string
+		var postID string
 
-		if err := rows.Scan(&tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
+		if err := rows.Scan(&postID, &tempDelivery, &tempIsDelivered, &tempHashedPassword); err != nil {
 			continue
 		}
 

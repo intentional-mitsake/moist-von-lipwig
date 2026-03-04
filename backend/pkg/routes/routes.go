@@ -178,6 +178,12 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to parse form", "error", err)
 		return
 	}
+	//decided not to use postid here for various reasons
+	//1. its long and hard to remember even tho its unique and can be used to identify the post much faster
+	//2. access pairs seemed an interesting idea
+	//the only prob with it is that if somehow two users have the same access pair, they will both be able to see only one posts status
+	//for that postid would be golden as its unique for each post
+	//one idea is to mix the postid with the waybill id
 	waybill := r.FormValue("waybill")
 	key := r.FormValue("key")
 	logger.Info("Waybill request received", "waybill", waybill, "key", key)
@@ -185,8 +191,7 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 		Key:       key,
 		WaybillID: waybill,
 	}
-	postID := r.FormValue("post-id")
-	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap, postID)
+	post, isDelivered, res, dt, err := database.CheckDeliveryStatus(d.DBObj, ap)
 	if err != nil {
 		//http.Error(w, "Failed to check delivery status", http.StatusInternalServerError)
 		logger.Error("Failed to check delivery status", "error", err)
