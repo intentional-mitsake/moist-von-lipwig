@@ -128,11 +128,12 @@ func SendEmail(db *sql.DB, postID string, email string) {
 	subject := "Moist Von Lipwig Post"
 	post := database.GetPost(db, postID)
 	body := "Your post is here!<br>" +
-		"<p>Sender: " + post.Sender + "</p><br>" +
-		"<p>Message: " + post.Message + "</p><br>" +
-		"<p>Attachments: " + strings.Join(post.Attachments, ", ") + "</p><br>" +
-		"<p>Images: " + strings.Join(post.Images, ", ") + "</p><br>" +
-		"Moist Von Lipwig"
+		"<p style='font-weight: bold;'>Sender: " + post.Sender + "</p><br>" +
+		"<p style='font-weight: bold;'>Message: " + post.Message + "</p><br>" +
+		//"<p>Attachments: " + strings.Join(post.Attachments, ", ") + "</p><br>" +
+		//"<p>Images: " + strings.Join(post.Images, ", ") + "</p><br>" +
+		"<p style='font-style: italic;'>Delivered on: " + post.Delivery.String() + "</p><br>" +
+		"<p style='font-style: italic; font-weight: bold;'> - Moist Von Lipwig</p>"
 	m := gomail.NewMessage()
 	for _, attachment := range post.Attachments {
 		m.Attach(attachment) //needs just the file path
