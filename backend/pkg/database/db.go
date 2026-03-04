@@ -66,6 +66,12 @@ func CreateTables(db *sql.DB) error {
 		logger.Error("Failed to create table", "error", err)
 		return err
 	}
+	_, err = db.Exec(`
+	CREATE INDEX apIndx ON posts USING GIN (access_pairs);
+	`)
+	if err != nil {
+		logger.Error("Failed to created inexes", "error", err)
+	}
 	//fmt.Println("this is happening")
 	//fmt.Println(res)
 	logger.Info("Created tables")
@@ -162,10 +168,19 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 }
 
 func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []models.Post, res int, e error) {
+	indx := `[{"WaybillID": "` + accesspair.WaybillID + `"}]`
 	rows, err := db.Query(`
     SELECT post_id, sender, email, message, attachments, images, created_at, delivery, is_delivered, pair->>'Key'
-    FROM posts, jsonb_path_query(access_pairs, '$[*]') AS pair
-    WHERE pair->>'WaybillID' = $1`, accesspair.WaybillID)
+    FROM posts, jsonb_array_elements(access_pairs) AS pair
+    WHERE access_pairs @> $1
+	AND pair->> 'WaybillID' = $2`, indx, accesspair.WaybillID)
+	//using indexing sequential search can be removed here
+	//didnt addd as much speed as i hoped
+	//theres a noticable diff in speed when theres waybill and when theres no waybill
+	// that was reduced by a lto after implementing async thru go routines
+	//still theres a feel of slowness so tohugh indexing would help
+	//realiseing now that unless i have to do a seq search of 10000000 rows, diff isnt much noticable from wihtout indexng
+	//will keep it still
 	//logger.Info("Rows:", rows)
 	if err != nil {
 
@@ -211,6 +226,10 @@ func CheckDeliveryStatus(db *sql.DB, accesspair config.AccessPair) (post []model
 		}(tempHashedPassword, accesspair.Key)
 	}
 	wg.Wait() //blocks this func until wg counter is 0
+	//basically each iteration counter is incr by 1 and when that iteration's go routine is done counter is decr by 1
+	//**NOTE: counter isnt decr when the iteration is done, but when the go routine is done
+	//the goroutines keep getting added throught the for loop, so the counter never reaches 0 untill all goroutines are done
+	//this wait is called to hold this func until all goroutines are done
 	if !found {
 		logger.Error("Waybill not found", "error", err)
 		return []models.Post{}, 1, err
