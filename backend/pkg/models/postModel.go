@@ -18,3 +18,16 @@ type Post struct {
 	Delivery    time.Time           `db:"delivery"`
 	IsDelivered bool                `db:"is_delivered"`
 }
+
+//to do
+/*
+add a scheduled(bool) field to the table to check if the post was scheduled or not
+initialize it to false, when a post is sheduled in services.ScheduleDelivery set it true
+this var should be true before IsDelivered as that is only true once delivered
+sceduled needs to be true once a cron job has been scheduled
+this way when a GetDeliveryDates is called we will fetch WHERE IsDelivered = false AND scheduled = false
+so that we only get unscheduled posts to prevent double scheduling
+tehre is the problem of server crashing after the cron job has been scheduled but before it has been run
+and as i havent figured out a workaround yet i will leave THIS for now
+rate limiting needs to be added
+*/
