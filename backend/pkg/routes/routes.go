@@ -103,6 +103,10 @@ func (d *DBConfig) postHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	waybilIDs := r.Form["waybill-ids"] //map of all the access ids cux its an array
 	keys := r.Form["key"]              //map of all the keys cux its an array
+	for i := range waybilIDs {
+		waybilIDs[i] = strings.TrimSpace(waybilIDs[i]) //to remove whitespace from ends and begining
+		keys[i] = strings.TrimSpace(keys[i])
+	}
 	sender := r.FormValue("sender")
 	//files := r.MultipartForm.File["files"] //map of all the files cux its an array
 	//imgs := r.MultipartForm.File["images"] //map of all the images cux its an array
@@ -186,8 +190,8 @@ func (d *DBConfig) accessHandler(w http.ResponseWriter, r *http.Request) {
 	//the only prob with it is that if somehow two users have the same access pair, they will both be able to see only one posts status
 	//for that postid would be golden as its unique for each post
 	//one idea is to mix the postid with the waybill id
-	waybill := r.FormValue("waybill")
-	key := r.FormValue("key")
+	waybill := strings.TrimSpace(r.FormValue("waybill"))
+	key := strings.TrimSpace(r.FormValue("key"))
 	logger.Info("Waybill request received", "waybill", waybill, "key", key)
 	ap := config.AccessPair{
 		Key:       key,

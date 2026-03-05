@@ -17,7 +17,7 @@
         <img src="/static/assets/logo.jpg" alt="Logo" class="logo">
 
         <!-- Search -->
-        <form action="/access-post" method="POST" class="search-form">
+        <form action="/access-post" method="POST" class="search-form" onsubmit="return validateTopBar()"> 
             <input type="text" name="waybill" placeholder="Waybill ID" required>
             <input type="password" name="key" placeholder="Courier Key" required>
             <button type="submit" class="LocatePost">Locate Post</button>
@@ -31,7 +31,7 @@
 
             <div class="content">
                 <h1>Welcome to Ankh Morpork Post Station</h1>
-                <form action="/post-letter" method="POST" enctype="multipart/form-data" onsubmit="return emailIsValid()">
+                <form action="/post-letter" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
     
     <div class="form-group">
         <label>Sender Name:</label>
@@ -45,7 +45,6 @@
             <button type="button" onclick="addAccessIds()">+ Add</button>
             <button type="button" onclick="removeAccessIds()" style="color: var(--accent-red); border-color: var(--accent-red);"> - Remove</button>
         </div>
-        <div class="error"></div>
     </div>
 
     <div class="form-group">
@@ -70,7 +69,10 @@
     </div>
     <p>*Images and Attachments will be sent with the Email only!</p>
     <button type="submit" class="stamp-btn">Seal and Send Post</button>
+    <br>
+        <div class="error"></div>
 </form>
+
             </div>
         </div>
     </div>
@@ -119,26 +121,122 @@
             accessDiv.removeChild(accessDiv.lastElementChild);
         }
 
-        function emailIsValid() {
-            const email = document.querySelector('input[name="email"]').value;
-            const error = document.querySelector('.emailerror');
-            const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        function validateForm() {
 
+            const error = document.querySelector('.error');
+            const emailError = document.querySelector('.emailerror');
+
+            error.innerHTML = "";
+            emailError.innerHTML = "";
+
+            const sender = document.querySelector('input[name="sender"]').value.trim();
+            const email = document.querySelector('input[name="email"]').value.trim();
+            const message = document.querySelector('textarea[name="message"]').value.trim();
+
+            const form = document.querySelector('form[action="/post-letter"]');
+            const waybills = form.querySelectorAll('input[name="waybill-ids"]');
+            const keys = form.querySelectorAll('input[name="key"]');
+
+            const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+            // Sender
+            if (sender.length < 2) {
+                showError("Sender name must be at least 2 characters.");
+                return false;
+            }
+
+            // Email
             if (!email) {
-                error.innerHTML = 'Email is required';
-                error.style.color = 'red';
+                emailError.innerHTML = "Email is required";
+                emailError.style.color = "red";
                 return false;
             }
 
-            if (!regex.test(email)) {
-                error.innerHTML = 'Invalid email address';
-                error.style.color = 'red';
+            if (!emailRegex.test(email)) {
+                emailError.innerHTML = "Invalid email address";
+                emailError.style.color = "red";
                 return false;
             }
 
-            error.innerHTML = '';
+            // Message
+            if (message.length < 10) {
+                showError("The message is too short for Moist von Lipwig to deliver.");
+                return false;
+            }
+
+            // Access pairs
+            for (let i = 0; i < waybills.length; i++) {
+
+                const wb = waybills[i].value.trim();
+                const k = keys[i].value.trim();
+
+                if (!wb || !k) {
+                    showError(`Access Pair #${i + 1} is missing data.`);
+                    return false;
+                }
+
+                if (wb.length < 2) {
+                    showError(`Courier Waybill #${i + 1} must be at least 2 characters.`);
+                    return false;
+                }
+
+                if (k.length < 4) {
+                    showError(`Courier Key #${i + 1} must be at least 4 characters.`);
+                    return false;
+                }
+
+                if (wb.includes(" ")) {
+                    showError(`Courier Waybill #${i + 1} cannot contain spaces.`);
+                    return false;
+                }
+
+                if (k.includes(" ")) {
+                    showError(`Courier Key #${i + 1} cannot contain spaces.`);
+                    return false;
+                }
+            }
+
             return true;
         }
+        function showError(msg) {
+            const error = document.querySelector('.error');
+            error.innerHTML = msg;
+            error.style.color = 'red';
+            error.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function validateTopBar() {
+
+        const waybill = document.querySelector('.top-bar input[name="waybill"]').value.trim();
+        const key = document.querySelector('.top-bar input[name="key"]').value.trim();
+
+        if (!waybill || !key) {
+            alert("Waybill ID and Courier Key are required.");
+            return false;
+        }
+
+        if (waybill.length < 2) {
+            alert("Waybill ID must be at least 2 characters.");
+            return false;
+        }
+
+        if (key.length < 4) {
+            alert("Courier Key must be at least 4 characters.");
+            return false;
+        }
+
+        if (waybill.includes(" ")) {
+            alert("Waybill ID cannot contain spaces.");
+            return false;
+        }
+
+        if (key.includes(" ")) {
+            alert("Courier Key cannot contain spaces.");
+            return false;
+        }
+
+        return true;
+    }
     </script>
 
 </body>
