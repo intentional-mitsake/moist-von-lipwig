@@ -185,11 +185,6 @@
                     return false;
                 }
 
-                if (wb.includes(" ")) {
-                    showError(`Courier Waybill #${i + 1} cannot contain spaces.`);
-                    return false;
-                }
-
                 if (k.includes(" ")) {
                     showError(`Courier Key #${i + 1} cannot contain spaces.`);
                     return false;
@@ -223,12 +218,7 @@
         if (key.length < 4) {
             alert("Courier Key must be at least 4 characters.");
             return false;
-        }
-
-        if (waybill.includes(" ")) {
-            alert("Waybill ID cannot contain spaces.");
-            return false;
-        }
+        } 
 
         if (key.includes(" ")) {
             alert("Courier Key cannot contain spaces.");
