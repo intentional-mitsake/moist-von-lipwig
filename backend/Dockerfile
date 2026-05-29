@@ -21,7 +21,7 @@ COPY --from=builder /app/main .
 
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/pkg ./pkg
-COPY --from=builder /app/.env .
+#COPY --from=builder /app/.env .
 
 # create the uploads folder
 RUN mkdir -p ./uploads
