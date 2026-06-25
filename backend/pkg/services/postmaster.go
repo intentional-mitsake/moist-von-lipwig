@@ -108,8 +108,15 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 		currentPostIDs := postIDs
 		c.AddFunc(currentSchedule, func() {
 			for _, postID := range currentPostIDs {
-				email := emailMap[postID]       //get the email of this postID
-				go SendEmail(db, postID, email) //mutliple posts are sent at same schedule so run parallel to reduce load
+				email := emailMap[postID] //get the email of this postID
+				go func(postid string, targetemail string) {
+					err := SendEmail(db, postid, targetemail) //mutliple posts are sent at same schedule so run parallel to reduce load
+					if err != nil {
+						//logger.Error("Failed to send email", "error", err)
+						return //dont chagen delivery status
+					}
+
+				}(postID, email)
 			}
 			//doesnt need to be called for each post as they are all scheduled for the same date
 			database.ChangeDeliveryStatus(db, currentPostIDs) //this way even delivery dates we missed previously will be marked as delivered
