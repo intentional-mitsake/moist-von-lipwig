@@ -16,7 +16,7 @@ func main() {
 	if port == "" {
 		port = "8848"
 	}
-	addr := fmt.Sprint(":", port)
+	addr := fmt.Sprint("0.0.0.0:", port) // for deployment
 	db, err := database.OpenDB()
 	if err != nil {
 		logger.Error("Failed to open the DB connection", "error", err)
