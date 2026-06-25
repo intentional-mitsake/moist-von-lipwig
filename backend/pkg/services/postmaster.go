@@ -82,7 +82,7 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 			go func(postID string, email string) { //have to ues local var for ids cuz risks of race condition
 				err := SendEmail(db, postID, email) //mutliple posts are sent at same schedule so run parallel to reduce load
 				if err != nil {
-					logger.Error("Failed to send email", "error", err)
+					//logger.Error("Failed to send email", "error", err)
 					return //dont chagen delivery status
 				}
 				database.ChangeDeliveryStatus(db, []string{p.PostID})
@@ -149,7 +149,7 @@ func SendEmail(db *sql.DB, postID string, email string) error {
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", body)
-	d := gomail.NewDialer("smtp.gmail.com", 587, von, pass)
+	d := gomail.NewDialer("smtp.gmail.com", 465, von, pass) // 587 is blocked
 	if err := d.DialAndSend(m); err != nil {
 		logger.Error("Failed to send email:", "error", err)
 		return err
