@@ -177,7 +177,7 @@ func SendEmail(db *sql.DB, postID string, email string) error {
 	}
 
 	params := &resend.SendEmailRequest{
-		From:        "Moist von Lipwig <postmaster@ankhmorpork.com>",
+		From:        "Moist von Lipwig <ankhmorpork-PostMaster@gauravmunankarmi.com.np>",
 		To:          []string{to},
 		Subject:     subject,
 		Html:        body,
