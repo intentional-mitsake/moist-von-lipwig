@@ -77,12 +77,16 @@ func ScheduleDelivery(c *cron.Cron, db *sql.DB, schedule []config.Delivery) {
 		//IF DELIVERY DATE IS PAST
 		if isDeliveryPast(p.Delivery) {
 			//deliver immediately if delivery date is past
-			go func() { //have to ues local var for ids cuz risks of race condition
-				//can use emailmap cuz it will be the same as isnt changed in loop iterations
-				email := emailMap[p.PostID]       //get the email of this postID
-				go SendEmail(db, p.PostID, email) //mutliple posts are sent at same schedule so run parallel to reduce load
+			//can use emailmap cuz it will be the same as isnt changed in loop iterations
+			email := emailMap[p.PostID]            //get the email of this postID
+			go func(postID string, email string) { //have to ues local var for ids cuz risks of race condition
+				err := SendEmail(db, postID, email) //mutliple posts are sent at same schedule so run parallel to reduce load
+				if err != nil {
+					logger.Error("Failed to send email", "error", err)
+					return //dont chagen delivery status
+				}
 				database.ChangeDeliveryStatus(db, []string{p.PostID})
-			}()
+			}(p.PostID, email)
 		} else { //only add to map if delivery date is not past
 			//for efficiency have a list of scheduled dates to group same day deliveries
 			if scheduledDates[scheduledDate] == nil { //if the date is not in the map, add it
@@ -120,7 +124,7 @@ func isDeliveryPast(schedule time.Time) bool {
 	//false if schedule is after cuurent day
 }
 
-func SendEmail(db *sql.DB, postID string, email string) {
+func SendEmail(db *sql.DB, postID string, email string) error {
 	//fmt.Println(email)
 	von := os.Getenv("VON")
 	pass := os.Getenv("PASS")
@@ -148,5 +152,8 @@ func SendEmail(db *sql.DB, postID string, email string) {
 	d := gomail.NewDialer("smtp.gmail.com", 587, von, pass)
 	if err := d.DialAndSend(m); err != nil {
 		logger.Error("Failed to send email:", "error", err)
+		return err
 	}
+	//Probably add retry logic for this and cron jobs
+	return nil
 }
