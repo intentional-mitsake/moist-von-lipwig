@@ -149,7 +149,22 @@ func GetDeliveryDates(db *sql.DB) ([]config.Delivery, error) {
 }
 
 func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
-	_, err := db.Exec( //no need to change if already delivered
+	tx, err := db.Begin()
+	if err != nil {
+		logger.Error("Failed to begin transaction", "error", err)
+		return
+	}
+
+	committed := false
+	defer func() {
+		if !committed {
+			if err := tx.Rollback(); err != nil {
+				logger.Error("Failed to rollback transaction", "error", err)
+			}
+		}
+	}()
+
+	_, err = tx.Exec( //no need to change if already delivered
 		`
 		UPDATE posts
 		SET is_delivered = true
@@ -164,6 +179,12 @@ func ChangeDeliveryStatus(db *sql.DB, postIDs []string) {
 		logger.Error("Failed to change delivery status", "error", err)
 		return
 	}
+	err = tx.Commit()
+	if err != nil {
+		logger.Error("Failed to commit transaction", "error", err)
+		return
+	}
+	committed = true
 	logger.Info("Delivery status changed", "postIDs", postIDs)
 }
 

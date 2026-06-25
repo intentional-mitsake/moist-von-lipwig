@@ -27,6 +27,6 @@ COPY --from=builder /app/pkg ./pkg
 RUN mkdir -p ./uploads
 
 # expose the port 8848
-EXPOSE 8080
+EXPOSE 8848
 # run the binary
 CMD ["./main"]
