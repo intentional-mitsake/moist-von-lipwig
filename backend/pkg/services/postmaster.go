@@ -1,6 +1,7 @@
 package services
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"moist-von-lipwig/pkg/config"
@@ -157,6 +158,8 @@ func SendEmail(db *sql.DB, postID string, email string) error {
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", body)
 	d := gomail.NewDialer("smtp.gmail.com", 465, von, pass) // 587 is blocked
+	// Implicit SSL requires special TLS settings on some environments
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: false, ServerName: "smtp.gmail.com"}
 	if err := d.DialAndSend(m); err != nil {
 		logger.Error("Failed to send email:", "error", err)
 		return err
