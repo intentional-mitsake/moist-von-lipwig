@@ -1,18 +1,18 @@
 package services
 
 import (
-	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"moist-von-lipwig/pkg/config"
 	"moist-von-lipwig/pkg/database"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/resend/resend-go/v2"
 	"github.com/robfig/cron"
-	gomail "gopkg.in/gomail.v2"
 )
 
 //check for delivery dates from the DB every 3 days(decided daily now, perf impact wont be much)
@@ -134,8 +134,8 @@ func isDeliveryPast(schedule time.Time) bool {
 
 func SendEmail(db *sql.DB, postID string, email string) error {
 	//fmt.Println(email)
-	von := os.Getenv("VON")
-	pass := os.Getenv("PASS")
+	//von := os.Getenv("VON")
+	//pass := os.Getenv("PASS")
 	to := email
 	subject := "Moist Von Lipwig Post"
 	post := database.GetPost(db, postID)
@@ -146,24 +146,48 @@ func SendEmail(db *sql.DB, postID string, email string) error {
 		//"<p>Images: " + strings.Join(post.Images, ", ") + "</p><br>" +
 		"<p style='font-style: italic;'>Delivered on: " + post.Delivery.String() + "</p><br>" +
 		"<p style='font-style: italic; font-weight: bold;'> - Moist Von Lipwig</p>"
-	m := gomail.NewMessage()
-	for _, attachment := range post.Attachments {
-		m.Attach(attachment) //needs just the file path
+
+	apiKey := os.Getenv("RESEND_API_KEY")
+	client := resend.NewClient(apiKey)
+
+	var resendAttachments []*resend.Attachment
+	for _, filePath := range post.Attachments {
+		fileBytes, err := os.ReadFile(filePath)
+		if err != nil {
+			logger.Error("Failed to read attachment file", "path", filePath, "error", err)
+			continue // Skip this specific file if it fails, or return err if strict
+		}
+		filename := filepath.Base(filePath)
+		resendAttachments = append(resendAttachments, &resend.Attachment{
+			Content:  fileBytes,
+			Filename: filename,
+		})
 	}
-	for _, image := range post.Images {
-		m.Attach(image)
+	for _, imgPath := range post.Images {
+		imgBytes, err := os.ReadFile(imgPath)
+		if err != nil {
+			logger.Error("Failed to read image file", "path", imgPath, "error", err)
+			continue
+		}
+		filename := filepath.Base(imgPath)
+		resendAttachments = append(resendAttachments, &resend.Attachment{
+			Content:  imgBytes,
+			Filename: filename,
+		})
 	}
-	m.SetHeader("From", von)
-	m.SetHeader("To", to)
-	m.SetHeader("Subject", subject)
-	m.SetBody("text/html", body)
-	d := gomail.NewDialer("smtp.gmail.com", 465, von, pass) // 587 is blocked
-	// Implicit SSL requires special TLS settings on some environments
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: false, ServerName: "smtp.gmail.com"}
-	if err := d.DialAndSend(m); err != nil {
+
+	params := &resend.SendEmailRequest{
+		From:        "Moist von Lipwig <postmaster@ankhmorpork.com>",
+		To:          []string{to},
+		Subject:     subject,
+		Html:        body,
+		Attachments: resendAttachments,
+	}
+	sent, err := client.Emails.Send(params)
+	if err != nil {
 		logger.Error("Failed to send email:", "error", err)
 		return err
 	}
-	//Probably add retry logic for this and cron jobs
+	logger.Info("Email sent", "email", sent)
 	return nil
 }
